@@ -83,7 +83,7 @@ export class LocalDocument {
 
         const store =
           this._index.indexName ??
-          (await this._index._actor.getMyProfile())[0].store;
+          (await this._index._actor.getMyProfile())[0]?.store;
 
         const fullDocument = await this._index._actor.getChunks(
           store,
