@@ -116,17 +116,17 @@ var LocalDocument = /** @class */ (function () {
     LocalDocument.prototype.loadText = function () {
         return __awaiter(this, void 0, void 0, function () {
             var documentID, store, _a, fullDocument, err_1;
-            var _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var _b, _c;
+            return __generator(this, function (_d) {
+                switch (_d.label) {
                     case 0:
                         if (!(this._text == undefined)) return [3 /*break*/, 8];
-                        _c.label = 1;
+                        _d.label = 1;
                     case 1:
-                        _c.trys.push([1, 7, , 8]);
+                        _d.trys.push([1, 7, , 8]);
                         return [4 /*yield*/, this._index.getDocumentId(this._title)];
                     case 2:
-                        documentID = _c.sent();
+                        documentID = _d.sent();
                         //then we use this ID to fetch all the chunks (texts) saved of that document
                         if (!documentID) {
                             console.log("no document ID returned");
@@ -137,19 +137,19 @@ var LocalDocument = /** @class */ (function () {
                         return [3 /*break*/, 5];
                     case 3: return [4 /*yield*/, this._index._actor.getMyProfile()];
                     case 4:
-                        _a = (_c.sent())[0].store;
-                        _c.label = 5;
+                        _a = (_c = (_d.sent())[0]) === null || _c === void 0 ? void 0 : _c.store;
+                        _d.label = 5;
                     case 5:
                         store = _a;
                         return [4 /*yield*/, this._index._actor.getChunks(store, documentID)];
                     case 6:
-                        fullDocument = _c.sent();
+                        fullDocument = _d.sent();
                         if (fullDocument) {
                             this._text = fullDocument[0];
                         }
                         return [3 /*break*/, 8];
                     case 7:
-                        err_1 = _c.sent();
+                        err_1 = _d.sent();
                         throw new Error("Error reading text file for document \"".concat(this.title, "\": ").concat(err_1.toString()));
                     case 8: return [2 /*return*/, this._text || ""];
                 }

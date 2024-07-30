@@ -1,2 +1,2 @@
-import { useVectorDB } from "./context";
-export { useVectorDB };
+import { useVectorDB, VectorDBProvider } from "./context";
+export { useVectorDB, VectorDBProvider };
