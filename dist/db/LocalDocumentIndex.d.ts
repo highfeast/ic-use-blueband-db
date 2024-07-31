@@ -11,10 +11,8 @@ export interface DocumentQueryOptions {
 }
 export interface LocalDocumentIndexConfig {
     actor: _SERVICE;
-    indexName?: string;
+    indexName: string;
     isCatalog?: boolean;
-    _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
-    _getDoumentUri?: (documentId: string) => Promise<string | undefined>;
     tokenizer?: Tokenizer;
     chunkingConfig?: Partial<TextSplitterConfig>;
 }

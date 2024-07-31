@@ -81,9 +81,12 @@ export class LocalDocument {
           throw new Error();
         }
 
-        const store =
-          this._index.indexName ??
-          (await this._index._actor.getMyProfile())[0]?.store;
+        const store = this._index.indexName;
+
+        if (!store) {
+          console.log("error no index or store nameZ", store);
+          throw new Error();
+        }
 
         const fullDocument = await this._index._actor.getChunks(
           store,

@@ -23,10 +23,10 @@ export interface DocumentQueryOptions {
 
 export interface LocalDocumentIndexConfig {
   actor: _SERVICE;
-  indexName?: string;
+  indexName: string;
   isCatalog?: boolean;
-  _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
-  _getDoumentUri?: (documentId: string) => Promise<string | undefined>;
+  // _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
+  // _getDoumentUri?: (documentId: string) => Promise<string | undefined>;
   tokenizer?: Tokenizer;
   chunkingConfig?: Partial<TextSplitterConfig>;
 }
@@ -60,8 +60,8 @@ export class LocalDocumentIndex extends LocalIndex {
       config.tokenizer ?? this._chunkingConfig.tokenizer ?? new GPT3Tokenizer();
     this._chunkingConfig.tokenizer = this._tokenizer;
     this.isCatalog = config.isCatalog;
-    this._getDocumentId = config._getDocumentId;
-    this._getDoumentUri = config._getDoumentUri;
+    // this._getDocumentId = config._getDocumentId;
+    // this._getDoumentUri = config._getDoumentUri;
   }
 
   public get embeddings(): EmbeddingsModel | undefined {
@@ -78,20 +78,21 @@ export class LocalDocumentIndex extends LocalIndex {
 
   public async getDocumentId(title: string): Promise<string | undefined> {
     await this.loadIndexData();
-
-    const x = this._getDocumentId
-      ? await this._getDocumentId(title)
-      : undefined;
-    return x;
+    const x = await this.actor?.titleToRecipeID(this.indexName, title);
+    return x[0] ?? undefined;
   }
 
   public async getDocumentUri(documentId: string): Promise<string | undefined> {
-    await this.loadIndexData();
-
-    const x = this._getDoumentUri
-      ? await this._getDoumentUri(documentId)
-      : undefined;
-    return x;
+    try {
+      console.log("current store", this.indexName);
+      console.log("id for uri to be found", documentId);
+      await this.loadIndexData();
+      const x = await this.actor?.recipeIDToTitle(this.indexName, documentId);
+      console.log("found uri", x);
+      return x[0] ?? undefined;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   public async deleteDocument(name: string): Promise<void> {
@@ -260,8 +261,6 @@ export class LocalDocumentIndex extends LocalIndex {
     for (const documentId in docs) {
       const title = await this.getDocumentUri(documentId);
 
-      console.log("found title be like", title);
-
       //uri is like the title here right?
 
       const documentResult = new LocalDocumentResult(
@@ -316,7 +315,6 @@ export class LocalDocumentIndex extends LocalIndex {
       }
       documentChunks[metadata.documentId].push(result);
     }
-
     // Create a document result for each document
     const documentResults: LocalDocumentResult[] = [];
 
@@ -324,7 +322,7 @@ export class LocalDocumentIndex extends LocalIndex {
 
     for (const documentId in documentChunks) {
       const chunks = documentChunks[documentId];
-      // console.log("new chunks", documentId);
+      console.log("new chunks id", documentId);
       if (documentId) {
         const title = await this.getDocumentUri(documentId);
         const documentResult = new LocalDocumentResult(

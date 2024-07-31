@@ -1,6 +1,7 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useRef } from "react";
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
 import { Colorize } from "./utils/Colorize";
+import { _SERVICE } from "./utils/explorer_backend.did";
 
 interface VectorDBIndexContextType {
   store: string | null;
@@ -24,17 +25,21 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
   const [localIndex, setLocalIndex] = React.useState<LocalDocumentIndex | null>(
     null
   );
-  const [actor, setActor] = React.useState<any>(null);
+  // const [actor, setActor] = React.useState<_SERVICE | null>(null);
+  const actor = useRef<_SERVICE | null>(null);
   const [store, setStore] = React.useState<string | null>(null);
   const [isEmbedding, setIsEmbedding] = React.useState<boolean>(false);
   const [isQuerying, setIsQuerying] = React.useState<boolean>(false);
 
   //checks if store exists
   const loadIsCatalog = async (storeId: any) => {
-    if (!storeId) {
+    if (!storeId || !actor) {
       return;
     }
-    const info = await actor.metadata(storeId);
+    if (!actor.current) {
+      return;
+    }
+    const info = await actor.current.metadata(storeId);
     console.log("metadata", info);
     if (info && info.length > 0) {
       return true;
@@ -43,45 +48,15 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  //returns title  of a document/recipe when a given document-id/recipe-id is passed
-  const getDocumentTitle = async (docId: string) => {
-    let responseCID = "";
-    try {
-      const info = await actor.recipeIDToTitle(store, docId);
-      if (info[0]) {
-        responseCID = info[0];
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    return responseCID;
-  };
-
-  //returns document-id/recipe-id when the  document/recipe title/name is passed
-  const getDocumentID = async (title: string) => {
-    let responseCID: any;
-    try {
-      const info = await actor.titleToRecipeID(store, title);
-      if (info[0]) {
-        responseCID = info[0];
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    return responseCID;
-  };
-
   // creates an index instance of the vector-db
   const init = async (newActor: any, newStore: string) => {
-    setActor(newActor);
+    actor.current = newActor;
     setStore(newStore);
     const isCatalog = await loadIsCatalog(newStore);
     const newLocalIndex = new LocalDocumentIndex({
       actor: newActor,
       indexName: newStore,
       isCatalog: isCatalog,
-      _getDocumentId: getDocumentID,
-      _getDoumentUri: getDocumentTitle,
       chunkingConfig: {
         chunkSize: 502,
       },
@@ -91,7 +66,7 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
 
   // creates and saves embeddings of already added document
   const saveEmbeddings = async (docTitle: string, docId: string) => {
-    if (!localIndex || !store) {
+    if (!localIndex || !store || !actor.current) {
       throw new Error("LocalIndex not initialized");
     }
 
@@ -107,7 +82,7 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
 
       id = documentResult.id;
       //end update
-      const result = await actor.endUpdate(docId);
+      const result = await actor.current.endUpdate(docId);
       console.log(
         Colorize.replaceLine(
           Colorize.success(`embeddings finished for document-id:"\n${result}`)
@@ -128,26 +103,17 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // Performs a similarity check
-  const similarityQuery = async (
-    promptEmbedding: any[] | any,
-    options?: {
-      maxDocuments: number;
-      maxChunks: number;
-    }
-  ) => {
-    if (!localIndex || !store) {
-      throw new Error("LocalIndex not initialized");
+  const similarityQuery = async (promptEmbedding: any[] | any) => {
+    if (!localIndex || !store || !actor) {
+      throw new Error("LocalIndex-query not initialized");
     }
     const queryResults: any = [];
     setIsQuerying(true);
     try {
-      const results = await localIndex.queryDocuments(
-        promptEmbedding,
-        options ?? {
-          maxDocuments: 4,
-          maxChunks: 512,
-        }
-      );
+      const results = await localIndex.queryDocuments(promptEmbedding, {
+        maxDocuments: 4,
+        maxChunks: 512,
+      });
 
       for (const result of results) {
         const resultObj: any = {
@@ -175,11 +141,12 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
 
         queryResults.push(resultObj);
       }
+      console.log("these are the query results", queryResults);
       if (queryResults && queryResults.length > 0) {
         // Map through fetchContext and resolve promises
         const contextArray = await Promise.all(
           queryResults.map(async (x: any) => {
-            const id = await getDocumentID(x.tile);
+            const id = await actor.current?.titleToRecipeID(store, x.tile);
             return {
               tile: x.tile,
               id: id,
@@ -194,11 +161,12 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
             };
           })
         );
-        return contextArray;
+        setIsQuerying(false);
+        return contextArray ?? queryResults;
       } else {
+        setIsQuerying(false);
         return queryResults;
       }
-      setIsQuerying(false);
     } catch (err) {
       setIsQuerying(false);
       Colorize.replaceLine(
@@ -228,7 +196,7 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
 export const useVectorDB = () => {
   const context = useContext(VectorDBContext);
   if (context === undefined) {
-    throw new Error("useVectorDB must be used within a LocalIndexProvider");
+    throw new Error("useVectorDB must be used within a VectorDBProvider");
   }
   return context;
 };

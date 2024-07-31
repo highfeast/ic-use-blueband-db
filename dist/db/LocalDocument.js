@@ -115,43 +115,38 @@ var LocalDocument = /** @class */ (function () {
     };
     LocalDocument.prototype.loadText = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var documentID, store, _a, fullDocument, err_1;
-            var _b, _c;
-            return __generator(this, function (_d) {
-                switch (_d.label) {
+            var documentID, store, fullDocument, err_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
-                        if (!(this._text == undefined)) return [3 /*break*/, 8];
-                        _d.label = 1;
+                        if (!(this._text == undefined)) return [3 /*break*/, 5];
+                        _a.label = 1;
                     case 1:
-                        _d.trys.push([1, 7, , 8]);
+                        _a.trys.push([1, 4, , 5]);
                         return [4 /*yield*/, this._index.getDocumentId(this._title)];
                     case 2:
-                        documentID = _d.sent();
+                        documentID = _a.sent();
                         //then we use this ID to fetch all the chunks (texts) saved of that document
                         if (!documentID) {
                             console.log("no document ID returned");
                             throw new Error();
                         }
-                        if (!((_b = this._index.indexName) !== null && _b !== void 0)) return [3 /*break*/, 3];
-                        _a = _b;
-                        return [3 /*break*/, 5];
-                    case 3: return [4 /*yield*/, this._index._actor.getMyProfile()];
-                    case 4:
-                        _a = (_c = (_d.sent())[0]) === null || _c === void 0 ? void 0 : _c.store;
-                        _d.label = 5;
-                    case 5:
-                        store = _a;
+                        store = this._index.indexName;
+                        if (!store) {
+                            console.log("error no index or store nameZ", store);
+                            throw new Error();
+                        }
                         return [4 /*yield*/, this._index._actor.getChunks(store, documentID)];
-                    case 6:
-                        fullDocument = _d.sent();
+                    case 3:
+                        fullDocument = _a.sent();
                         if (fullDocument) {
                             this._text = fullDocument[0];
                         }
-                        return [3 /*break*/, 8];
-                    case 7:
-                        err_1 = _d.sent();
+                        return [3 /*break*/, 5];
+                    case 4:
+                        err_1 = _a.sent();
                         throw new Error("Error reading text file for document \"".concat(this.title, "\": ").concat(err_1.toString()));
-                    case 8: return [2 /*return*/, this._text || ""];
+                    case 5: return [2 /*return*/, this._text || ""];
                 }
             });
         });

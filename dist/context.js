@@ -45,27 +45,31 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useRef } from "react";
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
 import { Colorize } from "./utils/Colorize";
 var VectorDBContext = createContext(undefined);
 export var VectorDBProvider = function (_a) {
     var children = _a.children;
     var _b = React.useState(null), localIndex = _b[0], setLocalIndex = _b[1];
-    var _c = React.useState(null), actor = _c[0], setActor = _c[1];
-    var _d = React.useState(null), store = _d[0], setStore = _d[1];
-    var _e = React.useState(false), isEmbedding = _e[0], setIsEmbedding = _e[1];
-    var _f = React.useState(false), isQuerying = _f[0], setIsQuerying = _f[1];
+    // const [actor, setActor] = React.useState<_SERVICE | null>(null);
+    var actor = useRef(null);
+    var _c = React.useState(null), store = _c[0], setStore = _c[1];
+    var _d = React.useState(false), isEmbedding = _d[0], setIsEmbedding = _d[1];
+    var _e = React.useState(false), isQuerying = _e[0], setIsQuerying = _e[1];
     //checks if store exists
     var loadIsCatalog = function (storeId) { return __awaiter(void 0, void 0, void 0, function () {
         var info;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!storeId) {
+                    if (!storeId || !actor) {
                         return [2 /*return*/];
                     }
-                    return [4 /*yield*/, actor.metadata(storeId)];
+                    if (!actor.current) {
+                        return [2 /*return*/];
+                    }
+                    return [4 /*yield*/, actor.current.metadata(storeId)];
                 case 1:
                     info = _a.sent();
                     console.log("metadata", info);
@@ -79,60 +83,13 @@ export var VectorDBProvider = function (_a) {
             }
         });
     }); };
-    //returns title  of a document/recipe when a given document-id/recipe-id is passed
-    var getDocumentTitle = function (docId) { return __awaiter(void 0, void 0, void 0, function () {
-        var responseCID, info, e_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    responseCID = "";
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, actor.recipeIDToTitle(store, docId)];
-                case 2:
-                    info = _a.sent();
-                    if (info[0]) {
-                        responseCID = info[0];
-                    }
-                    return [3 /*break*/, 4];
-                case 3:
-                    e_1 = _a.sent();
-                    console.log(e_1);
-                    return [3 /*break*/, 4];
-                case 4: return [2 /*return*/, responseCID];
-            }
-        });
-    }); };
-    //returns document-id/recipe-id when the  document/recipe title/name is passed
-    var getDocumentID = function (title) { return __awaiter(void 0, void 0, void 0, function () {
-        var responseCID, info, e_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, actor.titleToRecipeID(store, title)];
-                case 1:
-                    info = _a.sent();
-                    if (info[0]) {
-                        responseCID = info[0];
-                    }
-                    return [3 /*break*/, 3];
-                case 2:
-                    e_2 = _a.sent();
-                    console.log(e_2);
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/, responseCID];
-            }
-        });
-    }); };
     // creates an index instance of the vector-db
     var init = function (newActor, newStore) { return __awaiter(void 0, void 0, void 0, function () {
         var isCatalog, newLocalIndex;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    setActor(newActor);
+                    actor.current = newActor;
                     setStore(newStore);
                     return [4 /*yield*/, loadIsCatalog(newStore)];
                 case 1:
@@ -141,8 +98,6 @@ export var VectorDBProvider = function (_a) {
                         actor: newActor,
                         indexName: newStore,
                         isCatalog: isCatalog,
-                        _getDocumentId: getDocumentID,
-                        _getDoumentUri: getDocumentTitle,
                         chunkingConfig: {
                             chunkSize: 502,
                         },
@@ -158,7 +113,7 @@ export var VectorDBProvider = function (_a) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!localIndex || !store) {
+                    if (!localIndex || !store || !actor.current) {
                         throw new Error("LocalIndex not initialized");
                     }
                     setIsEmbedding(true);
@@ -171,7 +126,7 @@ export var VectorDBProvider = function (_a) {
                     documentResult = _a.sent();
                     console.log(documentResult);
                     id = documentResult.id;
-                    return [4 /*yield*/, actor.endUpdate(docId)];
+                    return [4 /*yield*/, actor.current.endUpdate(docId)];
                 case 3:
                     result = _a.sent();
                     console.log(Colorize.replaceLine(Colorize.success("embeddings finished for document-id:\"\n".concat(result))));
@@ -187,20 +142,20 @@ export var VectorDBProvider = function (_a) {
         });
     }); };
     // Performs a similarity check
-    var similarityQuery = function (promptEmbedding, options) { return __awaiter(void 0, void 0, void 0, function () {
+    var similarityQuery = function (promptEmbedding) { return __awaiter(void 0, void 0, void 0, function () {
         var queryResults, results, _loop_1, _i, results_1, result, contextArray, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!localIndex || !store) {
-                        throw new Error("LocalIndex not initialized");
+                    if (!localIndex || !store || !actor) {
+                        throw new Error("LocalIndex-query not initialized");
                     }
                     queryResults = [];
                     setIsQuerying(true);
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 10, , 11]);
-                    return [4 /*yield*/, localIndex.queryDocuments(promptEmbedding, options !== null && options !== void 0 ? options : {
+                    return [4 /*yield*/, localIndex.queryDocuments(promptEmbedding, {
                             maxDocuments: 4,
                             maxChunks: 512,
                         })];
@@ -247,14 +202,16 @@ export var VectorDBProvider = function (_a) {
                     _i++;
                     return [3 /*break*/, 3];
                 case 6:
+                    console.log("these are the query results", queryResults);
                     if (!(queryResults && queryResults.length > 0)) return [3 /*break*/, 8];
                     return [4 /*yield*/, Promise.all(queryResults.map(function (x) { return __awaiter(void 0, void 0, void 0, function () {
                             var id;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0: return [4 /*yield*/, getDocumentID(x.tile)];
+                            var _a;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0: return [4 /*yield*/, ((_a = actor.current) === null || _a === void 0 ? void 0 : _a.titleToRecipeID(store, x.tile))];
                                     case 1:
-                                        id = _a.sent();
+                                        id = _b.sent();
                                         return [2 /*return*/, __assign(__assign({ tile: x.tile, id: id }, x), { sections: x.sections.map(function (y) { return ({
                                                     text: y.text
                                                         .replace(/\n+/g, "\n")
@@ -267,11 +224,12 @@ export var VectorDBProvider = function (_a) {
                         }); }))];
                 case 7:
                     contextArray = _a.sent();
-                    return [2 /*return*/, contextArray];
-                case 8: return [2 /*return*/, queryResults];
-                case 9:
                     setIsQuerying(false);
-                    return [3 /*break*/, 11];
+                    return [2 /*return*/, contextArray !== null && contextArray !== void 0 ? contextArray : queryResults];
+                case 8:
+                    setIsQuerying(false);
+                    return [2 /*return*/, queryResults];
+                case 9: return [3 /*break*/, 11];
                 case 10:
                     err_2 = _a.sent();
                     setIsQuerying(false);
@@ -293,7 +251,7 @@ export var VectorDBProvider = function (_a) {
 export var useVectorDB = function () {
     var context = useContext(VectorDBContext);
     if (context === undefined) {
-        throw new Error("useVectorDB must be used within a LocalIndexProvider");
+        throw new Error("useVectorDB must be used within a VectorDBProvider");
     }
     return context;
 };

@@ -69,9 +69,9 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
             (_b = (_a = config.tokenizer) !== null && _a !== void 0 ? _a : _this._chunkingConfig.tokenizer) !== null && _b !== void 0 ? _b : new GPT3Tokenizer();
         _this._chunkingConfig.tokenizer = _this._tokenizer;
         _this.isCatalog = config.isCatalog;
-        _this._getDocumentId = config._getDocumentId;
-        _this._getDoumentUri = config._getDoumentUri;
         return _this;
+        // this._getDocumentId = config._getDocumentId;
+        // this._getDoumentUri = config._getDoumentUri;
     }
     Object.defineProperty(LocalDocumentIndex.prototype, "embeddings", {
         get: function () {
@@ -97,46 +97,44 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
     };
     LocalDocumentIndex.prototype.getDocumentId = function (title) {
         return __awaiter(this, void 0, void 0, function () {
-            var x, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var x;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0: return [4 /*yield*/, this.loadIndexData()];
                     case 1:
-                        _b.sent();
-                        if (!this._getDocumentId) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this._getDocumentId(title)];
+                        _c.sent();
+                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.titleToRecipeID(this.indexName, title))];
                     case 2:
-                        _a = _b.sent();
-                        return [3 /*break*/, 4];
-                    case 3:
-                        _a = undefined;
-                        _b.label = 4;
-                    case 4:
-                        x = _a;
-                        return [2 /*return*/, x];
+                        x = _c.sent();
+                        return [2 /*return*/, (_b = x[0]) !== null && _b !== void 0 ? _b : undefined];
                 }
             });
         });
     };
     LocalDocumentIndex.prototype.getDocumentUri = function (documentId) {
         return __awaiter(this, void 0, void 0, function () {
-            var x, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.loadIndexData()];
+            var x, e_1;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _c.trys.push([0, 3, , 4]);
+                        console.log("current store", this.indexName);
+                        console.log("id for uri to be found", documentId);
+                        return [4 /*yield*/, this.loadIndexData()];
                     case 1:
-                        _b.sent();
-                        if (!this._getDoumentUri) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this._getDoumentUri(documentId)];
+                        _c.sent();
+                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.recipeIDToTitle(this.indexName, documentId))];
                     case 2:
-                        _a = _b.sent();
-                        return [3 /*break*/, 4];
+                        x = _c.sent();
+                        console.log("found uri", x);
+                        return [2 /*return*/, (_b = x[0]) !== null && _b !== void 0 ? _b : undefined];
                     case 3:
-                        _a = undefined;
-                        _b.label = 4;
-                    case 4:
-                        x = _a;
-                        return [2 /*return*/, x];
+                        e_1 = _c.sent();
+                        console.log(e_1);
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
                 }
             });
         });
@@ -360,7 +358,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.getDocumentUri(documentId)];
                     case 3:
                         title = _d.sent();
-                        console.log("found title be like", title);
                         documentResult = new LocalDocumentResult(this, documentId, title, docs[documentId], this._tokenizer);
                         results.push(documentResult);
                         _d.label = 4;
@@ -413,6 +410,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         if (!(_c in _a)) return [3 /*break*/, 4];
                         documentId = _c;
                         chunks = documentChunks[documentId];
+                        console.log("new chunks id", documentId);
                         if (!documentId) return [3 /*break*/, 4];
                         return [4 /*yield*/, this.getDocumentUri(documentId)];
                     case 3:
