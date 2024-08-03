@@ -1,3 +1,3 @@
 import { useVectorDB, VectorDBProvider } from "./context";
-
-export { useVectorDB , VectorDBProvider};
+import { LocalIndex } from "./db/LocalIndex";
+export { useVectorDB, VectorDBProvider, LocalIndex };
