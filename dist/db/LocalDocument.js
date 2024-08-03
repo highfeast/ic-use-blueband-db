@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 /**
- * Represents an indexed document stored on filecoin.
+ * Represents an indexed document stored on bucket canister.
  */
 var LocalDocument = /** @class */ (function () {
     function LocalDocument(index, id, title) {
@@ -76,6 +76,7 @@ var LocalDocument = /** @class */ (function () {
             });
         });
     };
+    // unimplemented
     LocalDocument.prototype.hasMetadata = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {

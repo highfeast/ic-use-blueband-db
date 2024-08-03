@@ -58,20 +58,17 @@ import { LocalDocument } from "./LocalDocument";
 var LocalDocumentIndex = /** @class */ (function (_super) {
     __extends(LocalDocumentIndex, _super);
     function LocalDocumentIndex(config) {
-        var _a, _b;
         var _this = _super.call(this, config.actor, config.indexName) || this;
+        _this._apiKey = config.apiKey;
         _this._chunkingConfig = Object.assign({
             keepSeparators: true,
             chunkSize: 512,
             chunkOverlap: 0,
         }, config.chunkingConfig);
-        _this._tokenizer =
-            (_b = (_a = config.tokenizer) !== null && _a !== void 0 ? _a : _this._chunkingConfig.tokenizer) !== null && _b !== void 0 ? _b : new GPT3Tokenizer();
+        _this._tokenizer = new GPT3Tokenizer();
         _this._chunkingConfig.tokenizer = _this._tokenizer;
         _this.isCatalog = config.isCatalog;
         return _this;
-        // this._getDocumentId = config._getDocumentId;
-        // this._getDoumentUri = config._getDoumentUri;
     }
     Object.defineProperty(LocalDocumentIndex.prototype, "embeddings", {
         get: function () {
@@ -104,7 +101,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                     case 0: return [4 /*yield*/, this.loadIndexData()];
                     case 1:
                         _c.sent();
-                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.titleToRecipeID(this.indexName, title))];
+                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.titleToDocumentID(this.indexName, title))];
                     case 2:
                         x = _c.sent();
                         return [2 /*return*/, (_b = x[0]) !== null && _b !== void 0 ? _b : undefined];
@@ -112,7 +109,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
             });
         });
     };
-    LocalDocumentIndex.prototype.getDocumentUri = function (documentId) {
+    LocalDocumentIndex.prototype.getDocumentTitle = function (documentId) {
         return __awaiter(this, void 0, void 0, function () {
             var x, e_1;
             var _a, _b;
@@ -120,12 +117,10 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                 switch (_c.label) {
                     case 0:
                         _c.trys.push([0, 3, , 4]);
-                        console.log("current store", this.indexName);
-                        console.log("id for uri to be found", documentId);
                         return [4 /*yield*/, this.loadIndexData()];
                     case 1:
                         _c.sent();
-                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.recipeIDToTitle(this.indexName, documentId))];
+                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.documentIDToTitle(this.indexName, documentId))];
                     case 2:
                         x = _c.sent();
                         console.log("found uri", x);
@@ -135,61 +130,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         console.log(e_1);
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
-                }
-            });
-        });
-    };
-    LocalDocumentIndex.prototype.deleteDocument = function (name) {
-        return __awaiter(this, void 0, void 0, function () {
-            var documentId, chunks, _i, chunks_1, chunk, err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getDocumentId(name)];
-                    case 1:
-                        documentId = _a.sent();
-                        if (documentId == undefined) {
-                            return [2 /*return*/];
-                        }
-                        // Delete document chunks from vectordata and remove document from catalog. TODO: Not fully implemented
-                        return [4 /*yield*/, this.beginUpdate()];
-                    case 2:
-                        // Delete document chunks from vectordata and remove document from catalog. TODO: Not fully implemented
-                        _a.sent();
-                        _a.label = 3;
-                    case 3:
-                        _a.trys.push([3, 10, , 11]);
-                        return [4 /*yield*/, this.listItemsByMetadata({
-                                documentId: documentId,
-                            })];
-                    case 4:
-                        chunks = _a.sent();
-                        _i = 0, chunks_1 = chunks;
-                        _a.label = 5;
-                    case 5:
-                        if (!(_i < chunks_1.length)) return [3 /*break*/, 8];
-                        chunk = chunks_1[_i];
-                        return [4 /*yield*/, this.deleteItem(chunk.id)];
-                    case 6:
-                        _a.sent();
-                        _a.label = 7;
-                    case 7:
-                        _i++;
-                        return [3 /*break*/, 5];
-                    case 8: 
-                    // Remove entry from catalog
-                    // Commit changes
-                    return [4 /*yield*/, this.endUpdate()];
-                    case 9:
-                        // Remove entry from catalog
-                        // Commit changes
-                        _a.sent();
-                        return [3 /*break*/, 11];
-                    case 10:
-                        err_1 = _a.sent();
-                        // Cancel update and raise error
-                        this.cancelUpdate();
-                        throw new Error("Error deleting document \"".concat(name, "\": ").concat(err_1.toString()));
-                    case 11: return [2 /*return*/];
                 }
             });
         });
@@ -215,7 +155,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
     };
     LocalDocumentIndex.prototype.upsertDocument = function (docId, title, text, metadata) {
         return __awaiter(this, void 0, void 0, function () {
-            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_2, chunk, embeddings, _a, chunkBatches_1, rawBatch, response, batch, x, err_2, _b, response_1, embedding, i, chunk, embedding, chunkMetadata, err_3;
+            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_1, chunk, embeddings, _a, chunkBatches_1, rawBatch, result, batch, response, x, err_1, _b, result_1, embedding, i, chunk, embedding, chunkMetadata, err_2;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -228,8 +168,8 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         totalTokens = 0;
                         chunkBatches = [];
                         currentBatch = [];
-                        for (_i = 0, chunks_2 = chunks; _i < chunks_2.length; _i++) {
-                            chunk = chunks_2[_i];
+                        for (_i = 0, chunks_1 = chunks; _i < chunks_1.length; _i++) {
+                            chunk = chunks_1[_i];
                             totalTokens += chunk.tokens.length;
                             if (totalTokens > 8000) {
                                 chunkBatches.push(currentBatch);
@@ -247,25 +187,31 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                     case 1:
                         if (!(_a < chunkBatches_1.length)) return [3 /*break*/, 7];
                         rawBatch = chunkBatches_1[_a];
-                        response = void 0;
+                        result = void 0;
                         batch = this.formatBatch(rawBatch);
                         console.log("this batch", batch);
                         _c.label = 2;
                     case 2:
                         _c.trys.push([2, 4, , 5]);
-                        return [4 /*yield*/, this._actor.createEmbeddings(batch)];
+                        return [4 /*yield*/, this._actor.generateEmbeddings(batch, this._apiKey)];
                     case 3:
-                        x = _c.sent();
-                        response = JSON.parse(x);
-                        console.log(response);
+                        response = _c.sent();
+                        x = JSON.parse(result);
+                        result = x;
+                        console.log(result);
+                        if (response.status < 300) {
+                            result = response.data.data
+                                .sort(function (a, b) { return a.index - b.index; })
+                                .map(function (item) { return item.embedding; });
+                        }
                         return [3 /*break*/, 5];
                     case 4:
-                        err_2 = _c.sent();
-                        throw new Error("Error generating embeddings: ".concat(err_2.toString()));
+                        err_1 = _c.sent();
+                        throw new Error("Error generating embeddings: ".concat(err_1.toString()));
                     case 5:
-                        if (response) {
-                            for (_b = 0, response_1 = response; _b < response_1.length; _b++) {
-                                embedding = response_1[_b];
+                        if (result) {
+                            for (_b = 0, result_1 = result; _b < result_1.length; _b++) {
+                                embedding = result_1[_b];
                                 embeddings.push(embedding);
                             }
                         }
@@ -313,10 +259,10 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _c.sent();
                         return [3 /*break*/, 16];
                     case 15:
-                        err_3 = _c.sent();
+                        err_2 = _c.sent();
                         // Cancel update and raise error
                         this.cancelUpdate();
-                        throw new Error("Error adding document \"".concat(title, "\": ").concat(err_3.toString()));
+                        throw new Error("Error adding document \"".concat(title, "\": ").concat(err_2.toString()));
                     case 16: 
                     // Return document
                     return [2 /*return*/, new LocalDocument(this, documentId, title)];
@@ -355,7 +301,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _c = _b[_i];
                         if (!(_c in _a)) return [3 /*break*/, 4];
                         documentId = _c;
-                        return [4 /*yield*/, this.getDocumentUri(documentId)];
+                        return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
                         title = _d.sent();
                         documentResult = new LocalDocumentResult(this, documentId, title, docs[documentId], this._tokenizer);
@@ -412,7 +358,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         chunks = documentChunks[documentId];
                         console.log("new chunks id", documentId);
                         if (!documentId) return [3 /*break*/, 4];
-                        return [4 /*yield*/, this.getDocumentUri(documentId)];
+                        return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
                         title = _e.sent();
                         documentResult = new LocalDocumentResult(this, documentId, title, chunks, this._tokenizer);

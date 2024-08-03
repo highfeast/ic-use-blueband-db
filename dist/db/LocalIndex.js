@@ -102,42 +102,14 @@ var LocalIndex = /** @class */ (function () {
     LocalIndex.prototype.cancelUpdate = function () {
         this._update = undefined;
     };
-    LocalIndex.prototype.deleteItem = function (id) {
-        return __awaiter(this, void 0, void 0, function () {
-            var index, index;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!this._update) return [3 /*break*/, 1];
-                        index = this._update.items.findIndex(function (i) { return i.id === id; });
-                        if (index >= 0) {
-                            this._update.items.splice(index, 1);
-                        }
-                        return [3 /*break*/, 4];
-                    case 1: return [4 /*yield*/, this.beginUpdate()];
-                    case 2:
-                        _a.sent();
-                        index = this._update.items.findIndex(function (i) { return i.id === id; });
-                        if (index >= 0) {
-                            this._update.items.splice(index, 1);
-                        }
-                        return [4 /*yield*/, this.endUpdate()];
-                    case 3:
-                        _a.sent();
-                        _a.label = 4;
-                    case 4: return [2 /*return*/];
-                }
-            });
-        });
-    };
     /**
      * Ends an update to the index.
      * @remarks
-     * This method saves the index to cannister.
+     * This method updates the index on the cannister.
      */
     LocalIndex.prototype.endUpdate = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var canisterId, _i, _a, item, vectorId, err_1;
+            var _i, _a, item, vectorId, err_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -149,39 +121,33 @@ var LocalIndex = /** @class */ (function () {
                         }
                         _b.label = 1;
                     case 1:
-                        _b.trys.push([1, 7, , 8]);
-                        return [4 /*yield*/, this._actor.myStorePrincipal()];
-                    case 2:
-                        canisterId = (_b.sent())[0];
+                        _b.trys.push([1, 6, , 7]);
                         _i = 0, _a = this._update.items;
-                        _b.label = 3;
-                    case 3:
-                        if (!(_i < _a.length)) return [3 /*break*/, 6];
+                        _b.label = 2;
+                    case 2:
+                        if (!(_i < _a.length)) return [3 /*break*/, 5];
                         item = _a[_i];
-                        // Insert each vector to the canister
-                        console.log("item waiting to add", item);
-                        return [4 /*yield*/, this._actor.embedRecipe(item.metadata.documentId.toString(), item.id, BigInt(item.metadata.startPos), BigInt(item.metadata.endPos), item.vector)];
-                    case 4:
+                        return [4 /*yield*/, this._actor.putVector(item.metadata.documentId.toString(), item.id, BigInt(item.metadata.startPos), BigInt(item.metadata.endPos), item.vector)];
+                    case 3:
                         vectorId = _b.sent();
-                        console.log("new vector id", vectorId);
                         // Step 3: Handle successful publication
                         if (vectorId) {
-                            console.log("vector added to Cannister", canisterId, "new vector-id: ", vectorId);
+                            console.log("vector added: ", vectorId);
                             this._data = this._update;
                             this._update = undefined;
                         }
                         else {
-                            throw new Error("Failed to publish index");
+                            throw new Error("Failed to update index");
                         }
-                        _b.label = 5;
-                    case 5:
+                        _b.label = 4;
+                    case 4:
                         _i++;
-                        return [3 /*break*/, 3];
-                    case 6: return [3 /*break*/, 8];
-                    case 7:
+                        return [3 /*break*/, 2];
+                    case 5: return [3 /*break*/, 7];
+                    case 6:
                         err_1 = _b.sent();
-                        throw new Error("Error commiting index to cannister: ".concat(err_1.message));
-                    case 8: return [2 /*return*/];
+                        throw new Error("Error commiting vector to cannister: ".concat(err_1.message));
+                    case 7: return [2 /*return*/];
                 }
             });
         });
@@ -190,7 +156,7 @@ var LocalIndex = /** @class */ (function () {
      * Loads an index from disk and returns its stats.
      * @returns Index stats.
      */
-    LocalIndex.prototype.getIndexStats = function (apiKey) {
+    LocalIndex.prototype.getIndexStats = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -210,7 +176,7 @@ var LocalIndex = /** @class */ (function () {
      * @param id ID of the item to retrieve.
      * @returns Item or undefined if not found.
      */
-    LocalIndex.prototype.getItem = function (id, apiKey) {
+    LocalIndex.prototype.getItem = function (id) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -268,7 +234,7 @@ var LocalIndex = /** @class */ (function () {
                             console.log("error, no index name or cannister principal given");
                             return [2 /*return*/, false];
                         }
-                        return [4 /*yield*/, this._actor.metadata(indexName)];
+                        return [4 /*yield*/, this._actor.getMetadataList(indexName)];
                     case 1:
                         data = _a.sent();
                         if (data[0]) {
@@ -280,7 +246,6 @@ var LocalIndex = /** @class */ (function () {
                         return [2 /*return*/, false];
                     case 2:
                         err_2 = _a.sent();
-                        // Handle errors
                         console.error("Error checking if index is created:", err_2);
                         return [2 /*return*/, false];
                     case 3: return [2 /*return*/];
@@ -303,27 +268,6 @@ var LocalIndex = /** @class */ (function () {
                     case 1:
                         _a.sent();
                         return [2 /*return*/, this._data.items.slice()];
-                }
-            });
-        });
-    };
-    /**
-     * Returns all items in the index matching the filter.
-     * @remarks
-     * This method loads the index into memory and returns all its items matching the filter.
-     * @param filter Filter to apply.
-     * @returns Array of items matching the filter.
-     */
-    LocalIndex.prototype.listItemsByMetadata = function (filter) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.loadIndexData()];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/, this._data.items.filter(function (i) {
-                                return ItemSelector.select(i.metadata, filter);
-                            })];
                 }
             });
         });
@@ -372,37 +316,6 @@ var LocalIndex = /** @class */ (function () {
         });
     };
     /**
-     * Adds or replaces an item in the index.
-     * @remarks
-     * A new update is started if one is not already in progress. If an item with the same ID
-     * already exists, it will be replaced.
-     * @param item Item to insert or replace.
-     * @returns Upserted item.
-     */
-    LocalIndex.prototype.upsertItem = function (item, apiKey) {
-        return __awaiter(this, void 0, void 0, function () {
-            var newItem;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!this._update) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.addItemToUpdate(item, false)];
-                    case 1: return [2 /*return*/, (_a.sent())];
-                    case 2: return [4 /*yield*/, this.beginUpdate()];
-                    case 3:
-                        _a.sent();
-                        return [4 /*yield*/, this.addItemToUpdate(item, false)];
-                    case 4:
-                        newItem = _a.sent();
-                        return [4 /*yield*/, this.endUpdate()];
-                    case 5:
-                        _a.sent();
-                        return [2 /*return*/, newItem];
-                }
-            });
-        });
-    };
-    /**
      * Ensures that the index has been loaded into memory.
      */
     LocalIndex.prototype.loadIndexData = function () {
@@ -435,7 +348,6 @@ var LocalIndex = /** @class */ (function () {
                             console.log("no vectors found", vectors);
                             return [2 /*return*/];
                         }
-                        // console.log("index data", vectors[0]);
                         if (vectors[0]) {
                             result = vectors[0].items;
                             if (result.length > 0) {
@@ -474,7 +386,7 @@ var LocalIndex = /** @class */ (function () {
     };
     LocalIndex.prototype.addItemToUpdate = function (item, unique) {
         return __awaiter(this, void 0, void 0, function () {
-            var id, existing, metadata, metadataFile, newItem, existing;
+            var id, existing, metadata, newItem, existing;
             var _a, _b, _c, _d, _e;
             return __generator(this, function (_f) {
                 // Ensure vector is provided
@@ -519,7 +431,6 @@ var LocalIndex = /** @class */ (function () {
                 else {
                     (_e = this._update) === null || _e === void 0 ? void 0 : _e.items.push(newItem);
                     console.log("this item was added", newItem);
-                    //return here to ensure that item is updated
                     return [2 /*return*/, newItem];
                 }
                 return [2 /*return*/];

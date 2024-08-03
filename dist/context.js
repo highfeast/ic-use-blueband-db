@@ -57,51 +57,43 @@ export var VectorDBProvider = function (_a) {
     var _c = React.useState(null), store = _c[0], setStore = _c[1];
     var _d = React.useState(false), isEmbedding = _d[0], setIsEmbedding = _d[1];
     var _e = React.useState(false), isQuerying = _e[0], setIsQuerying = _e[1];
-    //checks if store exists
-    var loadIsCatalog = function (storeId) { return __awaiter(void 0, void 0, void 0, function () {
+    var IsDocExists = function (storeId) { return __awaiter(void 0, void 0, void 0, function () {
         var info;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!storeId || !actor) {
+                    if (!storeId || !actor || !actor.current) {
                         return [2 /*return*/];
                     }
-                    if (!actor.current) {
-                        return [2 /*return*/];
-                    }
-                    return [4 /*yield*/, actor.current.metadata(storeId)];
+                    return [4 /*yield*/, actor.current.getMetadataList(storeId)];
                 case 1:
                     info = _a.sent();
-                    console.log("metadata", info);
                     if (info && info.length > 0) {
                         return [2 /*return*/, true];
                     }
-                    else {
-                        false;
-                    }
-                    return [2 /*return*/];
+                    return [2 /*return*/, false];
             }
         });
     }); };
-    // creates an index instance of the vector-db
-    var init = function (newActor, newStore) { return __awaiter(void 0, void 0, void 0, function () {
+    // creates an instance of localDocument index
+    var init = function (newActor, _store, api_key) { return __awaiter(void 0, void 0, void 0, function () {
         var isCatalog, newLocalIndex;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    actor.current = newActor;
-                    setStore(newStore);
-                    return [4 /*yield*/, loadIsCatalog(newStore)];
+                case 0: return [4 /*yield*/, IsDocExists(_store)];
                 case 1:
                     isCatalog = _a.sent();
                     newLocalIndex = new LocalDocumentIndex({
                         actor: newActor,
-                        indexName: newStore,
+                        indexName: _store,
+                        apiKey: api_key,
                         isCatalog: isCatalog,
                         chunkingConfig: {
                             chunkSize: 502,
                         },
                     });
+                    actor.current = newActor;
+                    setStore(_store);
                     setLocalIndex(newLocalIndex);
                     return [2 /*return*/];
             }
@@ -114,7 +106,7 @@ export var VectorDBProvider = function (_a) {
             switch (_a.label) {
                 case 0:
                     if (!localIndex || !store || !actor.current) {
-                        throw new Error("LocalIndex not initialized");
+                        throw new Error("Index not initialized");
                     }
                     setIsEmbedding(true);
                     _a.label = 1;
@@ -141,7 +133,7 @@ export var VectorDBProvider = function (_a) {
             }
         });
     }); };
-    // Performs a similarity check
+    // Performs a similarity check - TODO: customize chunk config
     var similarityQuery = function (promptEmbedding) { return __awaiter(void 0, void 0, void 0, function () {
         var queryResults, results, _loop_1, _i, results_1, result, contextArray, err_2;
         return __generator(this, function (_a) {
@@ -209,7 +201,7 @@ export var VectorDBProvider = function (_a) {
                             var _a;
                             return __generator(this, function (_b) {
                                 switch (_b.label) {
-                                    case 0: return [4 /*yield*/, ((_a = actor.current) === null || _a === void 0 ? void 0 : _a.titleToRecipeID(store, x.tile))];
+                                    case 0: return [4 /*yield*/, ((_a = actor.current) === null || _a === void 0 ? void 0 : _a.titleToDocumentID(store, x.tile))];
                                     case 1:
                                         id = _b.sent();
                                         return [2 /*return*/, __assign(__assign({ tile: x.tile, id: id }, x), { sections: x.sections.map(function (y) { return ({

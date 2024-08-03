@@ -3,7 +3,7 @@ import { TextSplitterConfig } from "./TextSplitter";
 import { MetadataFilter, EmbeddingsModel, Tokenizer, MetadataTypes } from "../utils/types";
 import { LocalDocumentResult } from "./LocalDocumentResult";
 import { LocalDocument } from "./LocalDocument";
-import { _SERVICE } from "../utils/explorer_backend.did";
+import { _SERVICE } from "../utils/blueband_db_provider.did";
 export interface DocumentQueryOptions {
     maxDocuments?: number;
     maxChunks?: number;
@@ -12,16 +12,15 @@ export interface DocumentQueryOptions {
 export interface LocalDocumentIndexConfig {
     actor: _SERVICE;
     indexName: string;
+    apiKey: string;
     isCatalog?: boolean;
-    tokenizer?: Tokenizer;
     chunkingConfig?: Partial<TextSplitterConfig>;
 }
 export declare class LocalDocumentIndex extends LocalIndex {
     private readonly _tokenizer;
+    private _apiKey;
     private readonly _embeddings?;
     private readonly isCatalog?;
-    private readonly _getDocumentId?;
-    private readonly _getDoumentUri?;
     private readonly _chunkingConfig?;
     private _catalog?;
     private _newCatalog?;
@@ -30,8 +29,7 @@ export declare class LocalDocumentIndex extends LocalIndex {
     get tokenizer(): Tokenizer;
     isCatalogCreated(): Promise<boolean>;
     getDocumentId(title: string): Promise<string | undefined>;
-    getDocumentUri(documentId: string): Promise<string | undefined>;
-    deleteDocument(name: string): Promise<void>;
+    getDocumentTitle(documentId: string): Promise<string | undefined>;
     addVectors(storeId: string, docTitle: string, docId: string): Promise<any>;
     upsertDocument(docId: string, title: string, text: string, metadata?: Record<string, MetadataTypes>): Promise<LocalDocument>;
     listDocuments(): Promise<LocalDocumentResult[]>;

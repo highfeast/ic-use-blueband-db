@@ -3,7 +3,7 @@ interface VectorDBIndexContextType {
     store: string | null;
     isEmbedding: boolean;
     isQuerying: boolean;
-    init: (actor: any, store: string) => void;
+    init: (actor: any, store: string, config: any) => void;
     saveEmbeddings: (docTitle: string, docId: string) => Promise<{
         docTitle: string;
         id: string | undefined;
