@@ -7,21 +7,7 @@ import {
   MetadataTypes,
   QueryResult,
 } from "../utils/types";
-import { _SERVICE } from "../utils/explorer_backend.did";
-
-export interface CreateIndexConfig {
-  version: number;
-  apiKey: string;
-  actor: any;
-  deleteIfExists?: boolean;
-  metadata_config?: {
-    indexed?: string[];
-  };
-}
-
-export interface CreateIndexOptions {
-  apiKey: string;
-}
+import { _SERVICE } from "../utils/blueband_db_provider.did";
 
 /**
  * Local vector index instance.
@@ -82,71 +68,41 @@ export class LocalIndex {
     this._update = undefined;
   }
 
-  public async deleteItem(id: string): Promise<void> {
-    if (this._update) {
-      const index = this._update.items.findIndex((i) => i.id === id);
-      if (index >= 0) {
-        this._update.items.splice(index, 1);
-      }
-    } else {
-      await this.beginUpdate();
-      const index = this._update!.items.findIndex((i) => i.id === id);
-      if (index >= 0) {
-        this._update!.items.splice(index, 1);
-      }
-      await this.endUpdate();
-    }
-  }
-
   /**
    * Ends an update to the index.
    * @remarks
-   * This method saves the index to cannister.
+   * This method updates the index on the cannister.
    */
   public async endUpdate(): Promise<void> {
     if (!this._update) {
       throw new Error("No update in progress");
     }
-
     if (!this._actor) {
       throw new Error("No actor found at endUpdate");
     }
-
     try {
-      // Retrieve the canister ID
-      const canisterId = (await this._actor.myStorePrincipal())[0];
       // Loop through all items in the update
       for (const item of this._update.items) {
-        // Insert each vector to the canister
-        console.log("item waiting to add", item);
-        //add vector
-        const vectorId = await this._actor.embedRecipe(
+        // Upsert each vector to the canister
+        const vectorId = await this._actor.putVector(
           item.metadata.documentId.toString(),
           item.id,
           BigInt(item.metadata.startPos),
           BigInt(item.metadata.endPos),
           item.vector
         );
-
-        console.log("new vector id", vectorId);
-
         // Step 3: Handle successful publication
         if (vectorId) {
-          console.log(
-            "vector added to Cannister",
-            canisterId,
-            "new vector-id: ",
-            vectorId
-          );
+          console.log("vector added: ", vectorId);
           this._data = this._update;
           this._update = undefined;
         } else {
-          throw new Error("Failed to publish index");
+          throw new Error("Failed to update index");
         }
       }
     } catch (err) {
       throw new Error(
-        `Error commiting index to cannister: ${(err as Error).message}`
+        `Error commiting vector to cannister: ${(err as Error).message}`
       );
     }
   }
@@ -155,7 +111,7 @@ export class LocalIndex {
    * Loads an index from disk and returns its stats.
    * @returns Index stats.
    */
-  public async getIndexStats(apiKey: string): Promise<any> {
+  public async getIndexStats(): Promise<any> {
     await this.loadIndexData();
     return {
       metadata_config: this._data!.metadata_config,
@@ -169,8 +125,7 @@ export class LocalIndex {
    * @returns Item or undefined if not found.
    */
   public async getItem<TMetadata = Record<string, MetadataTypes>>(
-    id: string,
-    apiKey: string
+    id: string
   ): Promise<IndexItem<TMetadata> | undefined> {
     await this.loadIndexData();
     return this._data!.items.find((i) => i.id === id) as any | undefined;
@@ -200,7 +155,6 @@ export class LocalIndex {
   /**
    * Returns true if the index exists.
    */
-
   public async isIndexCreated(
     indexName: any | undefined //store name
   ): Promise<boolean> {
@@ -209,18 +163,14 @@ export class LocalIndex {
         console.log("error, no index name or cannister principal given");
         return false;
       }
-
-      const data = await this._actor.metadata(indexName);
-
+      const data = await this._actor.getMetadataList(indexName);
       if (data[0]) {
         return true;
       } else {
         false;
       }
-
       return false;
     } catch (err: unknown) {
-      // Handle errors
       console.error("Error checking if index is created:", err);
       return false;
     }
@@ -238,22 +188,6 @@ export class LocalIndex {
   > {
     await this.loadIndexData();
     return this._data!.items.slice() as any;
-  }
-
-  /**
-   * Returns all items in the index matching the filter.
-   * @remarks
-   * This method loads the index into memory and returns all its items matching the filter.
-   * @param filter Filter to apply.
-   * @returns Array of items matching the filter.
-   */
-  public async listItemsByMetadata<TMetadata = Record<string, MetadataTypes>>(
-    filter: MetadataFilter
-  ): Promise<IndexItem<TMetadata>[]> {
-    await this.loadIndexData();
-    return this._data!.items.filter((i) =>
-      ItemSelector.select(i.metadata, filter)
-    ) as any;
   }
 
   /**
@@ -308,31 +242,8 @@ export class LocalIndex {
   }
 
   /**
-   * Adds or replaces an item in the index.
-   * @remarks
-   * A new update is started if one is not already in progress. If an item with the same ID
-   * already exists, it will be replaced.
-   * @param item Item to insert or replace.
-   * @returns Upserted item.
-   */
-  public async upsertItem<TMetadata = Record<string, MetadataTypes>>(
-    item: Partial<IndexItem<TMetadata>>,
-    apiKey: string
-  ): Promise<IndexItem<TMetadata>> {
-    if (this._update) {
-      return (await this.addItemToUpdate(item, false)) as any;
-    } else {
-      await this.beginUpdate();
-      const newItem = await this.addItemToUpdate(item, false);
-      await this.endUpdate();
-      return newItem as any;
-    }
-  }
-
-  /**
    * Ensures that the index has been loaded into memory.
    */
-
   protected async loadIndexData(): Promise<void> {
     if (!this._data && !this._indexName) {
       console.error("data is not there");
@@ -350,14 +261,11 @@ export class LocalIndex {
         console.log("no cannister or store id not found");
         return;
       }
-      //return and reconstruct vectors
       const vectors = await this._actor.getIndex(storeId);
       if (!vectors[0]) {
         console.log("no vectors found", vectors);
         return;
       }
-      // console.log("index data", vectors[0]);
-
       if (vectors[0]) {
         const result = vectors[0].items;
         if (result.length > 0) {
@@ -412,7 +320,6 @@ export class LocalIndex {
 
     // Check for indexed metadata
     let metadata: Record<string, any> = {};
-    let metadataFile: string | undefined;
     if (this._update && item.metadata) {
       metadata = item.metadata;
     } else if (item.metadata) {
@@ -445,7 +352,6 @@ export class LocalIndex {
     } else {
       this._update?.items.push(newItem);
       console.log("this item was added", newItem);
-      //return here to ensure that item is updated
       return newItem;
     }
   }

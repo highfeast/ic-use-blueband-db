@@ -7,13 +7,12 @@ import {
   EmbeddingsModel,
   Tokenizer,
   MetadataTypes,
-  EmbeddingsResponse,
   QueryResult,
   DocumentChunkMetadata,
 } from "../utils/types";
 import { LocalDocumentResult } from "./LocalDocumentResult";
 import { LocalDocument } from "./LocalDocument";
-import { _SERVICE } from "../utils/explorer_backend.did";
+import { _SERVICE } from "../utils/blueband_db_provider.did";
 
 export interface DocumentQueryOptions {
   maxDocuments?: number;
@@ -24,30 +23,24 @@ export interface DocumentQueryOptions {
 export interface LocalDocumentIndexConfig {
   actor: _SERVICE;
   indexName: string;
+  apiKey: string;
   isCatalog?: boolean;
-  // _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
-  // _getDoumentUri?: (documentId: string) => Promise<string | undefined>;
-  tokenizer?: Tokenizer;
   chunkingConfig?: Partial<TextSplitterConfig>;
 }
 
 export class LocalDocumentIndex extends LocalIndex {
   private readonly _tokenizer: Tokenizer;
+  private _apiKey: string;
   private readonly _embeddings?: EmbeddingsModel;
 
   private readonly isCatalog?: boolean;
-  private readonly _getDocumentId?: (
-    documentUri: string
-  ) => Promise<string | undefined>;
-  private readonly _getDoumentUri?: (
-    documentId: string
-  ) => Promise<string | undefined>;
   private readonly _chunkingConfig?: TextSplitterConfig;
   private _catalog?: DocumentCatalog;
   private _newCatalog?: DocumentCatalog;
 
   public constructor(config: LocalDocumentIndexConfig) {
     super(config.actor, config.indexName);
+    this._apiKey = config.apiKey;
     this._chunkingConfig = Object.assign(
       {
         keepSeparators: true,
@@ -56,12 +49,9 @@ export class LocalDocumentIndex extends LocalIndex {
       } as TextSplitterConfig,
       config.chunkingConfig
     );
-    this._tokenizer =
-      config.tokenizer ?? this._chunkingConfig.tokenizer ?? new GPT3Tokenizer();
+    this._tokenizer = new GPT3Tokenizer();
     this._chunkingConfig.tokenizer = this._tokenizer;
     this.isCatalog = config.isCatalog;
-    // this._getDocumentId = config._getDocumentId;
-    // this._getDoumentUri = config._getDoumentUri;
   }
 
   public get embeddings(): EmbeddingsModel | undefined {
@@ -78,51 +68,20 @@ export class LocalDocumentIndex extends LocalIndex {
 
   public async getDocumentId(title: string): Promise<string | undefined> {
     await this.loadIndexData();
-    const x = await this.actor?.titleToRecipeID(this.indexName, title);
+    const x = await this.actor?.titleToDocumentID(this.indexName, title);
     return x[0] ?? undefined;
   }
 
-  public async getDocumentUri(documentId: string): Promise<string | undefined> {
+  public async getDocumentTitle(
+    documentId: string
+  ): Promise<string | undefined> {
     try {
-      console.log("current store", this.indexName);
-      console.log("id for uri to be found", documentId);
       await this.loadIndexData();
-      const x = await this.actor?.recipeIDToTitle(this.indexName, documentId);
+      const x = await this.actor?.documentIDToTitle(this.indexName, documentId);
       console.log("found uri", x);
       return x[0] ?? undefined;
     } catch (e) {
       console.log(e);
-    }
-  }
-
-  public async deleteDocument(name: string): Promise<void> {
-    // Lookup document ID
-    const documentId = await this.getDocumentId(name);
-    if (documentId == undefined) {
-      return;
-    }
-
-    // Delete document chunks from vectordata and remove document from catalog. TODO: Not fully implemented
-    await this.beginUpdate();
-    try {
-      // Get list of vectors for document
-      const chunks = await this.listItemsByMetadata<DocumentChunkMetadata>({
-        documentId,
-      });
-
-      // Delete vector chunks
-      for (const chunk of chunks) {
-        await this.deleteItem(chunk.id);
-      }
-      // Remove entry from catalog
-      // Commit changes
-      await this.endUpdate();
-    } catch (err: unknown) {
-      // Cancel update and raise error
-      this.cancelUpdate();
-      throw new Error(
-        `Error deleting document "${name}": ${(err as any).toString()}`
-      );
     }
   }
 
@@ -132,8 +91,6 @@ export class LocalDocumentIndex extends LocalIndex {
     docId: string
   ): Promise<any> {
     const recoveredChunks = await this._actor.getChunks(storeId, docId);
-
-    // all the documents saved
     if (recoveredChunks[0]) {
       const content = recoveredChunks[0];
       const result = await this.upsertDocument(docId, docTitle, content);
@@ -151,12 +108,6 @@ export class LocalDocumentIndex extends LocalIndex {
     if (!documentId) {
       throw new Error("No document ID given");
     }
-
-    ////////////////////////////////////////////////////////////////
-    // Text Splitting for Vector Embeddings. Please note this is
-    // different from the document chunks in the cannister which
-    // could've been splitted into chunks according to space left in a storage bucket
-    ///////////////////////////////////////////////////////////////
 
     // Split text into chunks
     const splitter = new TextSplitter();
@@ -182,21 +133,33 @@ export class LocalDocumentIndex extends LocalIndex {
     // Generate embeddings for chunks
     const embeddings: number[][] = [];
     for (const rawBatch of chunkBatches) {
-      let response: any;
+      let result: any;
       const batch = this.formatBatch(rawBatch);
       console.log("this batch", batch);
 
       try {
-        const x = await this._actor.createEmbeddings(batch);
-        response = JSON.parse(x);
-        console.log(response);
+        const response = await this._actor.generateEmbeddings(
+          batch,
+          this._apiKey
+        );
+        const x = JSON.parse(result);
+
+        result = x;
+        console.log(result);
+
+        if (response.status < 300) {
+          result = response.data.data
+            .sort((a: any, b: any) => a.index - b.index)
+            .map((item: any) => item.embedding);
+        }
       } catch (err: unknown) {
         throw new Error(
           `Error generating embeddings: ${(err as any).toString()}`
         );
       }
-      if (response) {
-        for (const embedding of response) {
+
+      if (result) {
+        for (const embedding of result) {
           embeddings.push(embedding);
         }
       }
@@ -259,7 +222,7 @@ export class LocalDocumentIndex extends LocalIndex {
     // Create document results
     const results: LocalDocumentResult[] = [];
     for (const documentId in docs) {
-      const title = await this.getDocumentUri(documentId);
+      const title = await this.getDocumentTitle(documentId);
 
       //uri is like the title here right?
 
@@ -324,7 +287,7 @@ export class LocalDocumentIndex extends LocalIndex {
       const chunks = documentChunks[documentId];
       console.log("new chunks id", documentId);
       if (documentId) {
-        const title = await this.getDocumentUri(documentId);
+        const title = await this.getDocumentTitle(documentId);
         const documentResult = new LocalDocumentResult(
           this,
           documentId,

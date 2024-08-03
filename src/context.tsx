@@ -1,13 +1,14 @@
 import React, { createContext, useContext, ReactNode, useRef } from "react";
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
 import { Colorize } from "./utils/Colorize";
-import { _SERVICE } from "./utils/explorer_backend.did";
+import { _SERVICE } from "./utils/blueband_db_provider.did";
+import { TextSplitterConfig } from "./db/TextSplitter";
 
 interface VectorDBIndexContextType {
   store: string | null;
   isEmbedding: boolean;
   isQuerying: boolean;
-  init: (actor: any, store: string) => void;
+  init: (actor: any, store: string, config: any) => void;
   saveEmbeddings: (
     docTitle: string,
     docId: string
@@ -31,48 +32,42 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
   const [isEmbedding, setIsEmbedding] = React.useState<boolean>(false);
   const [isQuerying, setIsQuerying] = React.useState<boolean>(false);
 
-  //checks if store exists
-  const loadIsCatalog = async (storeId: any) => {
-    if (!storeId || !actor) {
+  const IsDocExists = async (storeId: any) => {
+    if (!storeId || !actor || !actor.current) {
       return;
     }
-    if (!actor.current) {
-      return;
-    }
-    const info = await actor.current.metadata(storeId);
-    console.log("metadata", info);
+    const info = await actor.current.getMetadataList(storeId);
     if (info && info.length > 0) {
       return true;
-    } else {
-      false;
     }
+    return false;
   };
 
-  // creates an index instance of the vector-db
-  const init = async (newActor: any, newStore: string) => {
-    actor.current = newActor;
-    setStore(newStore);
-    const isCatalog = await loadIsCatalog(newStore);
+  // creates an instance of localDocument index
+  const init = async (newActor: any, _store: string, api_key: string) => {
+    const isCatalog = await IsDocExists(_store);
     const newLocalIndex = new LocalDocumentIndex({
       actor: newActor,
-      indexName: newStore,
+      indexName: _store,
+      apiKey: api_key,
       isCatalog: isCatalog,
       chunkingConfig: {
         chunkSize: 502,
       },
     });
+    actor.current = newActor;
+    setStore(_store);
     setLocalIndex(newLocalIndex);
   };
 
   // creates and saves embeddings of already added document
   const saveEmbeddings = async (docTitle: string, docId: string) => {
     if (!localIndex || !store || !actor.current) {
-      throw new Error("LocalIndex not initialized");
+      throw new Error("Index not initialized");
     }
 
     let id: string | undefined;
     let documentResult: any;
-
     setIsEmbedding(true);
 
     try {
@@ -102,7 +97,7 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
     return { docTitle, id };
   };
 
-  // Performs a similarity check
+  // Performs a similarity check - TODO: customize chunk config
   const similarityQuery = async (promptEmbedding: any[] | any) => {
     if (!localIndex || !store || !actor) {
       throw new Error("LocalIndex-query not initialized");
@@ -146,7 +141,7 @@ export const VectorDBProvider: React.FC<{ children: ReactNode }> = ({
         // Map through fetchContext and resolve promises
         const contextArray = await Promise.all(
           queryResults.map(async (x: any) => {
-            const id = await actor.current?.titleToRecipeID(store, x.tile);
+            const id = await actor.current?.titleToDocumentID(store, x.tile);
             return {
               tile: x.tile,
               id: id,

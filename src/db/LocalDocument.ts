@@ -2,7 +2,7 @@ import { MetadataTypes } from "../utils/types";
 import { LocalDocumentIndex } from "./LocalDocumentIndex";
 
 /**
- * Represents an indexed document stored on filecoin.
+ * Represents an indexed document stored on bucket canister.
  */
 export class LocalDocument {
   private readonly _index: LocalDocumentIndex;
@@ -34,6 +34,7 @@ export class LocalDocument {
     }
   }
 
+  // unimplemented
   public async hasMetadata(): Promise<boolean> {
     try {
       return false;
