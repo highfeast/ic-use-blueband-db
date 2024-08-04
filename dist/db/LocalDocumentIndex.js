@@ -155,7 +155,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
     };
     LocalDocumentIndex.prototype.upsertDocument = function (docId, title, text, metadata) {
         return __awaiter(this, void 0, void 0, function () {
-            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_1, chunk, embeddings, _a, chunkBatches_1, rawBatch, result, batch, response, x, err_1, _b, result_1, embedding, i, chunk, embedding, chunkMetadata, err_2;
+            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_1, chunk, embeddings, _a, chunkBatches_1, rawBatch, result, batch, response, embedding, err_1, _b, result_1, embedding, i, chunk, embedding, chunkMetadata, err_2;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -196,13 +196,11 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         return [4 /*yield*/, this._actor.generateEmbeddings(batch, this._apiKey)];
                     case 3:
                         response = _c.sent();
-                        x = JSON.parse(result);
-                        result = x;
-                        console.log(result);
-                        if (response.status < 300) {
-                            result = response.data.data
+                        if ("success" in response) {
+                            embedding = JSON.parse(response.success).data
                                 .sort(function (a, b) { return a.index - b.index; })
                                 .map(function (item) { return item.embedding; });
+                            return [2 /*return*/, embedding];
                         }
                         return [3 /*break*/, 5];
                     case 4:
@@ -287,7 +285,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                                 docs[metadata.documentId].length < 1) {
                                 docs[metadata.documentId] = [];
                             }
-                            docs[metadata.documentId].push({ item: chunk, score: 1.0 }); //TODO: replace
+                            docs[metadata.documentId].push({ item: chunk, score: chunk.norm });
                         });
                         results = [];
                         _a = docs;

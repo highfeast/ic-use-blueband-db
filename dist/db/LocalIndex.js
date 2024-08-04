@@ -127,7 +127,7 @@ var LocalIndex = /** @class */ (function () {
                     case 2:
                         if (!(_i < _a.length)) return [3 /*break*/, 5];
                         item = _a[_i];
-                        return [4 /*yield*/, this._actor.putVector(item.metadata.documentId.toString(), item.id, item.metadata.startPos ? BigInt(item.metadata.startPos) : 0, item.metadata.endPos ? BigInt(item.metadata.endPos) : 0, item.vector)];
+                        return [4 /*yield*/, this._actor.putVector(item.metadata.documentId.toString(), item.id, BigInt(item.metadata.startPos), BigInt(item.metadata.endPos), item.metadata.norm, item.vector)];
                     case 3:
                         vectorId = _b.sent();
                         // Step 3: Handle successful publication

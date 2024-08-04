@@ -142,15 +142,12 @@ export class LocalDocumentIndex extends LocalIndex {
           batch,
           this._apiKey
         );
-        const x = JSON.parse(result);
 
-        result = x;
-        console.log(result);
-
-        if (response.status < 300) {
-          result = response.data.data
+        if ("success" in response) {
+          const embedding = JSON.parse(response.success).data
             .sort((a: any, b: any) => a.index - b.index)
             .map((item: any) => item.embedding);
+          return embedding;
         }
       } catch (err: unknown) {
         throw new Error(
@@ -216,7 +213,7 @@ export class LocalDocumentIndex extends LocalIndex {
       ) {
         docs[metadata.documentId] = [];
       }
-      docs[metadata.documentId].push({ item: chunk, score: 1.0 }); //TODO: replace
+      docs[metadata.documentId].push({ item: chunk, score: chunk.norm }); 
     });
 
     // Create document results
