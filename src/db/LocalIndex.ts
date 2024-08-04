@@ -214,6 +214,8 @@ export class LocalIndex {
       items = items.filter((i) => ItemSelector.select(i.metadata, filter));
     }
 
+    // "ic-use-blueband-db": "^0.0.89",
+
     // Calculate distances
     const norm = ItemSelector.normalize(vector);
     const distances: { index: number; distance: number }[] = [];
@@ -223,7 +225,7 @@ export class LocalIndex {
         vector,
         norm,
         item.vector,
-        item.norm ? item.norm : 1 //remove after demo and replace from contract
+        item.norm
       );
       distances.push({ index: i, distance: distance });
     }
@@ -263,6 +265,10 @@ export class LocalIndex {
         return;
       }
       const vectors = await this._actor.getIndex(storeId);
+
+      console.log("this is the store id: ", storeId);
+      console.log("let me see the vectors: ", vectors);
+
       if (!vectors[0]) {
         console.log("no vectors found", vectors);
         return;

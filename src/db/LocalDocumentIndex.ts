@@ -144,8 +144,8 @@ export class LocalDocumentIndex extends LocalIndex {
         );
 
         if ("success" in response) {
-          const embedding = JSON.parse(response.success).data
-            .sort((a: any, b: any) => a.index - b.index)
+          const embedding = JSON.parse(response.success)
+            .data.sort((a: any, b: any) => a.index - b.index)
             .map((item: any) => item.embedding);
           return embedding;
         }
@@ -213,7 +213,7 @@ export class LocalDocumentIndex extends LocalIndex {
       ) {
         docs[metadata.documentId] = [];
       }
-      docs[metadata.documentId].push({ item: chunk, score: chunk.norm }); 
+      docs[metadata.documentId].push({ item: chunk, score: chunk.norm });
     });
 
     // Create document results
@@ -253,6 +253,9 @@ export class LocalDocumentIndex extends LocalIndex {
     if (!queryEmbedding) {
       throw new Error(`no embeddings  found for query`);
     }
+    
+    console.log("max chunks", options.maxChunks);
+    console.log("filter options", options.filter);
 
     // Query index for chunks
     const results = await this.queryItems<DocumentChunkMetadata>(
@@ -261,7 +264,7 @@ export class LocalDocumentIndex extends LocalIndex {
       options.filter as any
     );
 
-    console.log("returned query embedding", results);
+    console.log("returned query embedding2", results);
 
     // Group chunks by document
     const documentChunks: {

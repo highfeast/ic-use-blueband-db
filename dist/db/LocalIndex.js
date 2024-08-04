@@ -298,8 +298,7 @@ var LocalIndex = /** @class */ (function () {
                         distances = [];
                         for (i = 0; i < items.length; i++) {
                             item = items[i];
-                            distance = ItemSelector.normalizedCosineSimilarity(vector, norm, item.vector, item.norm ? item.norm : 1 //remove after demo and replace from contract
-                            );
+                            distance = ItemSelector.normalizedCosineSimilarity(vector, norm, item.vector, item.norm);
                             distances.push({ index: i, distance: distance });
                         }
                         // Sort by distance DESCENDING
@@ -344,6 +343,8 @@ var LocalIndex = /** @class */ (function () {
                         return [4 /*yield*/, this._actor.getIndex(storeId)];
                     case 3:
                         vectors = _a.sent();
+                        console.log("this is the store id: ", storeId);
+                        console.log("let me see the vectors: ", vectors);
                         if (!vectors[0]) {
                             console.log("no vectors found", vectors);
                             return [2 /*return*/];

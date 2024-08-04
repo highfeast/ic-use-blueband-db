@@ -197,8 +197,8 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                     case 3:
                         response = _c.sent();
                         if ("success" in response) {
-                            embedding = JSON.parse(response.success).data
-                                .sort(function (a, b) { return a.index - b.index; })
+                            embedding = JSON.parse(response.success)
+                                .data.sort(function (a, b) { return a.index - b.index; })
                                 .map(function (item) { return item.embedding; });
                             return [2 /*return*/, embedding];
                         }
@@ -328,10 +328,12 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         if (!queryEmbedding) {
                             throw new Error("no embeddings  found for query");
                         }
+                        console.log("max chunks", options.maxChunks);
+                        console.log("filter options", options.filter);
                         return [4 /*yield*/, this.queryItems(queryEmbedding, options.maxChunks, options.filter)];
                     case 1:
                         results = _e.sent();
-                        console.log("returned query embedding", results);
+                        console.log("returned query embedding2", results);
                         documentChunks = {};
                         for (_i = 0, results_1 = results; _i < results_1.length; _i++) {
                             result = results_1[_i];
