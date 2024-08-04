@@ -237,7 +237,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         embedding = embeddings[i];
                         chunkMetadata = Object.assign({
                             documentId: documentId,
-                            startPos: chunk.startPos === 0 ? 1 : chunk.startPos,
+                            startPos: chunk.startPos,
                             endPos: chunk.endPos,
                         }, metadata);
                         return [4 /*yield*/, this.insertItem({
