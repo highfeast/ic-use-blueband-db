@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useRef } from "react";
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
 import { Colorize } from "./utils/Colorize";
-import { _SERVICE } from "./utils/blueband_db_provider.did";
+import { _SERVICE } from "./utils/blueband_db_provider.did"
 import { TextSplitterConfig } from "./db/TextSplitter";
 
 interface VectorDBIndexContextType {

@@ -20,7 +20,7 @@ export interface Blueband {
   'getMetadata' : ActorMethod<[string, string], [] | [DocumentMetadata__1]>,
   'getMetadataList' : ActorMethod<[string], [] | [MetadataList]>,
   'putVector' : ActorMethod<
-    [string, string, string, bigint, bigint, Array<number>],
+    [string, string, string, bigint, bigint, number, Array<number>],
     string
   >,
   'titleToDocumentID' : ActorMethod<[string, string], [] | [string]>,

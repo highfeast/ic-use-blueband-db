@@ -87,8 +87,9 @@ export class LocalIndex {
         const vectorId = await this._actor.putVector(
           item.metadata.documentId.toString(),
           item.id,
-          item.metadata.startPos ? BigInt(item.metadata.startPos) : 0,
-          item.metadata.endPos ? BigInt(item.metadata.endPos) : 0,
+          BigInt(item.metadata.startPos),
+          BigInt(item.metadata.endPos),
+          item.metadata.norm,
           item.vector
         );
         // Step 3: Handle successful publication
