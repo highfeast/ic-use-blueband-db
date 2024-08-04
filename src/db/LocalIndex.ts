@@ -83,12 +83,12 @@ export class LocalIndex {
     try {
       // Loop through all items in the update
       for (const item of this._update.items) {
-        // Upsert each vector to the canister
+        // Insert each vector to the canister
         const vectorId = await this._actor.putVector(
           item.metadata.documentId.toString(),
           item.id,
-          BigInt(item.metadata.startPos),
-          BigInt(item.metadata.endPos),
+          item.metadata.startPos ? BigInt(item.metadata.startPos) : 0,
+          item.metadata.endPos ? BigInt(item.metadata.endPos) : 0,
           item.vector
         );
         // Step 3: Handle successful publication

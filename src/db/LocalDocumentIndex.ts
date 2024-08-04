@@ -178,7 +178,7 @@ export class LocalDocumentIndex extends LocalIndex {
         const chunkMetadata: DocumentChunkMetadata = Object.assign(
           {
             documentId,
-            startPos: chunk.startPos === 0 ? 1 : chunk.startPos,
+            startPos: chunk.startPos,
             endPos: chunk.endPos,
           },
           metadata
