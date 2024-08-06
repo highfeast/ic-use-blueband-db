@@ -32,9 +32,7 @@ import { useBlueBand } from "ic-use-blueband";
 const ReactComponent = () = {
 const { initializeIndex} = useBlueband();
 
-const collectionId = "";
-
-const {initializeIndex}   useBlueBand();
+const collectionId = "unique collection_id";
 
 await initializeIndex(actor, collectionId,/*config*/);
 ```
@@ -60,7 +58,6 @@ Query the index to find documents similar to a given prompt:
 const { Query } = useBlueband();
 
 const results = await Query("query text");
-console.log(results);
 
 //Results are ranked by similarity scores:
 
