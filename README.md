@@ -1,6 +1,6 @@
 # IC-Blueband-db
 
-React library for interacting with the `Blueband-db`. It exports functions to load indexes into system memory, save new items and compare similarity between saved documents and a prompt using in-memory operations.
+React library for interacting with the `Blueband-db`. It exports functions to load indexes into system memory, save new items and compare similarity between saved documents and prompts using in-memory operations.
 
 [Demo]()
 
