@@ -4,16 +4,18 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const OPENAI_KEY = process.env.OPENAI_KEY;
+
 
 export class BlueBand {
   private collectionId: string;
+  private api_key : string;
   constructor(
     private actor: any,
-    collectionId: string,
+    config: any,
     private logFunction?: (message: string) => void
   ) {
-    this.collectionId = collectionId;
+    this.collectionId = config.collectionId;
+    this.api_key = config.api_key;
   }
 
   async log(text: string) {
@@ -31,13 +33,13 @@ export class BlueBand {
   };
 
   async initialize() {
-    if (!OPENAI_KEY) throw new Error("OPENAI_KEY is not defined");
+    if (!this.api_key) throw new Error("OPENAI_KEY is not defined");
     const isCatalog = await this.IsDocExists(this.collectionId);
     if (this.collectionId) {
       const config = {
         actor: this.actor,
         indexName: this.collectionId,
-        apiKey: OPENAI_KEY,
+        apiKey: this.api_key,
         isCatalog: isCatalog,
         _getDocumentId: this.getDocumentID,
         _getDocumentTitle: this.getDocumentTitle,
@@ -122,7 +124,7 @@ export class BlueBand {
   async similarityQuery(index: LocalDocumentIndex, prompt: string) {
     await this.initialize();
     this.log(`Generating embedding for prompt: ${prompt}`);
-    const response = await this.actor.generateEmbeddings([prompt], OPENAI_KEY);
+    const response = await this.actor.generateEmbeddings([prompt], this.api_key);
 
     if ("success" in response) {
       const embedding = JSON.parse(response.success).data[0].embedding;

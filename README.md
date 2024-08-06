@@ -33,8 +33,13 @@ const ReactComponent = () = {
 const { initializeIndex} = useBlueband();
 
 const collectionId = "unique collection_id";
+cons config = {
+    collection: collectionId,
+    api_key: OPENAI_KEY,
+    /*chunk options*/
+}
 
-await initializeIndex(actor, collectionId,/*config*/);
+await initializeIndex(actor, config);
 ```
 
     2.	Add Items
