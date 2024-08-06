@@ -3,7 +3,8 @@ export declare class BlueBand {
     private actor;
     private logFunction?;
     private collectionId;
-    constructor(actor: any, collectionId: string, logFunction?: ((message: string) => void) | undefined);
+    private api_key;
+    constructor(actor: any, config: any, logFunction?: ((message: string) => void) | undefined);
     log(text: string): Promise<void>;
     getCollectionPrincipal: () => Promise<any>;
     initialize(): Promise<LocalDocumentIndex | undefined>;

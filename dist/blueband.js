@@ -35,11 +35,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
-import dotenv from "dotenv";
-dotenv.config();
-var OPENAI_KEY = process.env.OPENAI_KEY;
 var BlueBand = /** @class */ (function () {
-    function BlueBand(actor, collectionId, logFunction) {
+    function BlueBand(actor, config, logFunction) {
         var _this = this;
         this.actor = actor;
         this.logFunction = logFunction;
@@ -99,7 +96,8 @@ var BlueBand = /** @class */ (function () {
                 }
             });
         }); };
-        this.collectionId = collectionId;
+        this.collectionId = config.collectionId;
+        this.api_key = config.api_key;
     }
     BlueBand.prototype.log = function (text) {
         return __awaiter(this, void 0, void 0, function () {
@@ -120,7 +118,7 @@ var BlueBand = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!OPENAI_KEY)
+                        if (!this.api_key)
                             throw new Error("OPENAI_KEY is not defined");
                         return [4 /*yield*/, this.IsDocExists(this.collectionId)];
                     case 1:
@@ -129,7 +127,7 @@ var BlueBand = /** @class */ (function () {
                             config = {
                                 actor: this.actor,
                                 indexName: this.collectionId,
-                                apiKey: OPENAI_KEY,
+                                apiKey: this.api_key,
                                 isCatalog: isCatalog,
                                 _getDocumentId: this.getDocumentID,
                                 _getDocumentTitle: this.getDocumentTitle,
@@ -204,7 +202,7 @@ var BlueBand = /** @class */ (function () {
                     case 1:
                         _a.sent();
                         this.log("Generating embedding for prompt: ".concat(prompt));
-                        return [4 /*yield*/, this.actor.generateEmbeddings([prompt], OPENAI_KEY)];
+                        return [4 /*yield*/, this.actor.generateEmbeddings([prompt], this.api_key)];
                     case 2:
                         response = _a.sent();
                         if (!("success" in response)) return [3 /*break*/, 4];
