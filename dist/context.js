@@ -1,14 +1,3 @@
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -45,202 +34,144 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 import React, { createContext, useContext, useRef } from "react";
-import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
-import { Colorize } from "./utils/Colorize";
+import { BlueBand } from "./blueband";
 var VectorDBContext = createContext(undefined);
-export var VectorDBProvider = function (_a) {
+export var BluebandProvider = function (_a) {
     var children = _a.children;
-    var _b = React.useState(null), localIndex = _b[0], setLocalIndex = _b[1];
-    // const [actor, setActor] = React.useState<_SERVICE | null>(null);
     var actor = useRef(null);
-    var _c = React.useState(null), store = _c[0], setStore = _c[1];
-    var _d = React.useState(false), isEmbedding = _d[0], setIsEmbedding = _d[1];
-    var _e = React.useState(false), isQuerying = _e[0], setIsQuerying = _e[1];
-    var IsDocExists = function (storeId) { return __awaiter(void 0, void 0, void 0, function () {
-        var info;
+    var _b = React.useState(undefined), index = _b[0], setIndex = _b[1];
+    var _c = React.useState(null), db = _c[0], setDB = _c[1];
+    var _d = React.useState([]), documents = _d[0], setMyDocuments = _d[1];
+    var _e = React.useState([]), logs = _e[0], setLogs = _e[1];
+    var _f = React.useState(false), isSaving = _f[0], setIsLoading = _f[1];
+    var _g = React.useState(false), isQuerying = _g[0], setIsQuerying = _g[1];
+    var addLog = function (message) {
+        setLogs(function (prevLogs) { return __spreadArray(__spreadArray([], prevLogs, true), [
+            "[".concat(new Date().toISOString(), "] ").concat(message),
+        ], false); });
+    };
+    // creates an instance of localDocument index
+    var initializeIndex = function (_actor, collectionId) { return __awaiter(void 0, void 0, void 0, function () {
+        var _db, localIndex, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!storeId || !actor || !actor.current) {
+                    _db = new BlueBand(actor, collectionId, addLog);
+                    if (!_db) return [3 /*break*/, 3];
+                    return [4 /*yield*/, _db.initialize()];
+                case 1:
+                    localIndex = _a.sent();
+                    setDB(_db);
+                    setIndex(localIndex);
+                    addLog("Initialized local index for collection: ".concat(collectionId));
+                    return [4 /*yield*/, _db.getDocuments(collectionId)];
+                case 2:
+                    result = _a.sent();
+                    if (result) {
+                        setMyDocuments(result.documents);
+                    }
+                    _a.label = 3;
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); };
+    var getStorePrincipal = function () { return __awaiter(void 0, void 0, void 0, function () {
+        var result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!index || !db) {
+                        addLog("Error: Index not intitalized");
                         return [2 /*return*/];
                     }
-                    return [4 /*yield*/, actor.current.getMetadataList(storeId)];
+                    return [4 /*yield*/, db.getCollectionPrincipal()];
                 case 1:
-                    info = _a.sent();
-                    if (info && info.length > 0) {
-                        return [2 /*return*/, true];
-                    }
-                    return [2 /*return*/, false];
-            }
-        });
-    }); };
-    // creates an instance of localDocument index
-    var init = function (newActor, _store, api_key) { return __awaiter(void 0, void 0, void 0, function () {
-        var isCatalog, newLocalIndex;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, IsDocExists(_store)];
-                case 1:
-                    isCatalog = _a.sent();
-                    newLocalIndex = new LocalDocumentIndex({
-                        actor: newActor,
-                        indexName: _store,
-                        apiKey: api_key,
-                        isCatalog: isCatalog,
-                        chunkingConfig: {
-                            chunkSize: 502,
-                        },
-                    });
-                    actor.current = newActor;
-                    setStore(_store);
-                    setLocalIndex(newLocalIndex);
-                    return [2 /*return*/];
-            }
-        });
-    }); };
-    // creates and saves embeddings of already added document
-    var saveEmbeddings = function (docTitle, docId) { return __awaiter(void 0, void 0, void 0, function () {
-        var id, documentResult, result, err_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    if (!localIndex || !store || !actor.current) {
-                        throw new Error("Index not initialized");
-                    }
-                    setIsEmbedding(true);
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, localIndex.addVectors(store, docTitle, docId)];
-                case 2:
-                    //addvectors
-                    documentResult = _a.sent();
-                    console.log(documentResult);
-                    id = documentResult.id;
-                    return [4 /*yield*/, actor.current.endUpdate(docId)];
-                case 3:
                     result = _a.sent();
-                    console.log(Colorize.replaceLine(Colorize.success("embeddings finished for document-id:\"\n".concat(result))));
-                    setIsEmbedding(false);
-                    return [3 /*break*/, 5];
-                case 4:
-                    err_1 = _a.sent();
-                    console.log(Colorize.replaceLine(Colorize.error("Error indexing: \"".concat(docTitle, "\"\n").concat(err_1.message))));
-                    setIsEmbedding(false);
-                    return [3 /*break*/, 5];
-                case 5: return [2 /*return*/, { docTitle: docTitle, id: id }];
+                    return [2 /*return*/, result];
             }
         });
     }); };
-    // Performs a similarity check - TODO: customize chunk config
-    var similarityQuery = function (promptEmbedding) { return __awaiter(void 0, void 0, void 0, function () {
-        var queryResults, results, _loop_1, _i, results_1, result, contextArray, err_2;
+    // adds new document and saves vector
+    var AddItem = React.useCallback(function (title, content) { return __awaiter(void 0, void 0, void 0, function () {
+        var result, e_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (!localIndex || !store || !actor) {
-                        throw new Error("LocalIndex-query not initialized");
+                    if (!index || !db || !content) {
+                        addLog("Error: Missing required data for adding document");
+                        return [2 /*return*/];
                     }
-                    queryResults = [];
-                    setIsQuerying(true);
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 10, , 11]);
-                    return [4 /*yield*/, localIndex.queryDocuments(promptEmbedding, {
-                            maxDocuments: 4,
-                            maxChunks: 512,
-                        })];
+                    _a.trys.push([1, 3, , 4]);
+                    setIsLoading(true);
+                    return [4 /*yield*/, db.addDocumentAndVector(index, title, content)];
+                case 2:
+                    result = _a.sent();
+                    addLog("Document added successfully. ID: ".concat(result.documentId));
+                    setIsLoading(false);
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _a.sent();
+                    setIsLoading(false);
+                    console.error(e_1);
+                    addLog("Error adding document: ".concat(e_1));
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    }); }, [index, db]);
+    // queries local index
+    var Query = React.useCallback(function (prompt) { return __awaiter(void 0, void 0, void 0, function () {
+        var results, e_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!index || !db) {
+                        addLog("Error: Index is not initialized");
+                        return [2 /*return*/];
+                    }
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    setIsQuerying(true);
+                    return [4 /*yield*/, db.similarityQuery(index, prompt)];
                 case 2:
                     results = _a.sent();
-                    _loop_1 = function (result) {
-                        var resultObj, tokens, sectionCount, overlap, sections;
-                        return __generator(this, function (_b) {
-                            switch (_b.label) {
-                                case 0:
-                                    resultObj = {
-                                        tile: result.title,
-                                        score: result.score,
-                                        chunks: result.chunks.length,
-                                        sections: [],
-                                    };
-                                    tokens = 500;
-                                    sectionCount = 1;
-                                    overlap = true;
-                                    return [4 /*yield*/, result.renderSections(tokens, sectionCount, overlap)];
-                                case 1:
-                                    sections = _b.sent();
-                                    resultObj.sections = sections.map(function (section, index) { return ({
-                                        title: sectionCount === 1 ? "Section" : "Section ".concat(index + 1),
-                                        score: section.score,
-                                        tokens: section.tokenCount,
-                                        text: section.text,
-                                    }); });
-                                    queryResults.push(resultObj);
-                                    return [2 /*return*/];
-                            }
-                        });
-                    };
-                    _i = 0, results_1 = results;
-                    _a.label = 3;
+                    addLog("Query processed ".concat(results.length, " results"));
+                    setIsQuerying(false);
+                    return [2 /*return*/, results];
                 case 3:
-                    if (!(_i < results_1.length)) return [3 /*break*/, 6];
-                    result = results_1[_i];
-                    return [5 /*yield**/, _loop_1(result)];
-                case 4:
-                    _a.sent();
-                    _a.label = 5;
-                case 5:
-                    _i++;
-                    return [3 /*break*/, 3];
-                case 6:
-                    console.log("these are the query results", queryResults);
-                    if (!(queryResults && queryResults.length > 0)) return [3 /*break*/, 8];
-                    return [4 /*yield*/, Promise.all(queryResults.map(function (x) { return __awaiter(void 0, void 0, void 0, function () {
-                            var id;
-                            var _a;
-                            return __generator(this, function (_b) {
-                                switch (_b.label) {
-                                    case 0: return [4 /*yield*/, ((_a = actor.current) === null || _a === void 0 ? void 0 : _a.titleToDocumentID(store, x.tile))];
-                                    case 1:
-                                        id = _b.sent();
-                                        return [2 /*return*/, __assign(__assign({ tile: x.tile, id: id }, x), { sections: x.sections.map(function (y) { return ({
-                                                    text: y.text
-                                                        .replace(/\n+/g, "\n")
-                                                        .replace(/\n/g, "\\n")
-                                                        .replace(/"/g, '\\"'),
-                                                    tokens: y.tokens,
-                                                }); }) })];
-                                }
-                            });
-                        }); }))];
-                case 7:
-                    contextArray = _a.sent();
+                    e_2 = _a.sent();
+                    addLog("Error in similarity query: ".concat(e_2));
                     setIsQuerying(false);
-                    return [2 /*return*/, contextArray !== null && contextArray !== void 0 ? contextArray : queryResults];
-                case 8:
-                    setIsQuerying(false);
-                    return [2 /*return*/, queryResults];
-                case 9: return [3 /*break*/, 11];
-                case 10:
-                    err_2 = _a.sent();
-                    setIsQuerying(false);
-                    Colorize.replaceLine(Colorize.error("Error quering prompt embeddings: \n".concat(err_2.message)));
-                    return [3 /*break*/, 11];
-                case 11: return [2 /*return*/];
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
             }
         });
-    }); };
+    }); }, [index, db, addLog]);
     return (React.createElement(VectorDBContext.Provider, { value: {
-            store: store,
-            isEmbedding: isEmbedding,
+            isSaving: isSaving,
             isQuerying: isQuerying,
-            init: init,
-            saveEmbeddings: saveEmbeddings,
-            similarityQuery: similarityQuery,
+            documents: documents,
+            logs: logs,
+            getStorePrincipal: getStorePrincipal,
+            initializeIndex: initializeIndex,
+            AddItem: AddItem,
+            Query: Query,
         } }, children));
 };
-export var useVectorDB = function () {
+export var useBlueBand = function () {
     var context = useContext(VectorDBContext);
     if (context === undefined) {
         throw new Error("useVectorDB must be used within a VectorDBProvider");

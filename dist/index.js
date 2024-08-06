@@ -1,3 +1,3 @@
-import { useVectorDB, VectorDBProvider } from "./context";
+import { useBlueBand, BluebandProvider } from "./context";
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
-export { useVectorDB, VectorDBProvider, LocalDocumentIndex };
+export { useBlueBand, BluebandProvider, LocalDocumentIndex };

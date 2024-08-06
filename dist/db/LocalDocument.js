@@ -124,20 +124,16 @@ var LocalDocument = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 4, , 5]);
-                        console.log("this title for retrieval", this._title);
                         return [4 /*yield*/, this._index.getDocumentId(this._title)];
                     case 2:
                         documentID = _a.sent();
-                        //then we use this ID to fetch all the chunks (texts) saved of that document
                         if (!documentID) {
                             console.log("no document ID returned");
                             throw new Error();
                         }
                         store = this._index.indexName;
-                        console.log("document id", documentID);
-                        console.log("stores", store);
                         if (!store) {
-                            console.log("error no index or store nameZ", store);
+                            console.log("error no index or store id", store);
                             throw new Error();
                         }
                         return [4 /*yield*/, this._index._actor.getChunks(store, documentID)];

@@ -112,7 +112,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _b.label = 4;
                     case 4:
                         x = _a;
-                        console.log("retrieved doc id", x);
                         return [2 /*return*/, x];
                 }
             });
@@ -135,7 +134,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _b.label = 3;
                     case 3:
                         x = _a;
-                        console.log("retrieved doc uri or title", x);
                         return [2 /*return*/, x];
                     case 4:
                         e_1 = _b.sent();
@@ -306,11 +304,9 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _c = _b[_i];
                         if (!(_c in _a)) return [3 /*break*/, 4];
                         documentId = _c;
-                        console.log("this doc id is being checked", documentId);
                         return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
                         title = _d.sent();
-                        console.log("maybe title", title);
                         documentResult = new LocalDocumentResult(this, documentId, title, docs[documentId], this._tokenizer);
                         results.push(documentResult);
                         _d.label = 4;
@@ -340,7 +336,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.queryItems(queryEmbedding, options.maxChunks, options.filter)];
                     case 1:
                         results = _e.sent();
-                        console.log("returned query embedding3", results);
                         documentChunks = {};
                         for (_i = 0, results_1 = results; _i < results_1.length; _i++) {
                             result = results_1[_i];
@@ -351,7 +346,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                             documentChunks[metadata.documentId].push(result);
                         }
                         documentResults = [];
-                        console.log("document result", documentChunks);
                         _a = documentChunks;
                         _b = [];
                         for (_c in _a)
@@ -364,7 +358,6 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         if (!(_c in _a)) return [3 /*break*/, 4];
                         documentId = _c;
                         chunks = documentChunks[documentId];
-                        console.log("new chunks id", documentId);
                         if (!documentId) return [3 /*break*/, 4];
                         return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
