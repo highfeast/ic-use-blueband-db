@@ -1,14 +1,8 @@
 import { LocalDocumentIndex } from "./db/LocalDocumentIndex";
 
-import dotenv from "dotenv";
-
-dotenv.config();
-
-
-
 export class BlueBand {
   private collectionId: string;
-  private api_key : string;
+  private api_key: string;
   constructor(
     private actor: any,
     config: any,
@@ -124,7 +118,10 @@ export class BlueBand {
   async similarityQuery(index: LocalDocumentIndex, prompt: string) {
     await this.initialize();
     this.log(`Generating embedding for prompt: ${prompt}`);
-    const response = await this.actor.generateEmbeddings([prompt], this.api_key);
+    const response = await this.actor.generateEmbeddings(
+      [prompt],
+      this.api_key
+    );
 
     if ("success" in response) {
       const embedding = JSON.parse(response.success).data[0].embedding;
