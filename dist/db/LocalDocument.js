@@ -124,6 +124,7 @@ var LocalDocument = /** @class */ (function () {
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 4, , 5]);
+                        console.log("this title for retrieval", this._title);
                         return [4 /*yield*/, this._index.getDocumentId(this._title)];
                     case 2:
                         documentID = _a.sent();
@@ -133,6 +134,8 @@ var LocalDocument = /** @class */ (function () {
                             throw new Error();
                         }
                         store = this._index.indexName;
+                        console.log("document id", documentID);
+                        console.log("stores", store);
                         if (!store) {
                             console.log("error no index or store nameZ", store);
                             throw new Error();

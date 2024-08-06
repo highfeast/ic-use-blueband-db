@@ -127,7 +127,8 @@ var LocalIndex = /** @class */ (function () {
                     case 2:
                         if (!(_i < _a.length)) return [3 /*break*/, 5];
                         item = _a[_i];
-                        return [4 /*yield*/, this._actor.putVector(item.metadata.documentId.toString(), item.id, BigInt(item.metadata.startPos), BigInt(item.metadata.endPos), item.metadata.norm, item.vector)];
+                        console.log("testing norm", item.vector);
+                        return [4 /*yield*/, this._actor.putVector(this.indexName, item.metadata.documentId.toString(), item.id, BigInt(item.metadata.startPos), BigInt(item.metadata.endPos), item.norm, item.vector)];
                     case 3:
                         vectorId = _b.sent();
                         // Step 3: Handle successful publication
@@ -231,7 +232,7 @@ var LocalIndex = /** @class */ (function () {
                     case 0:
                         _a.trys.push([0, 2, , 3]);
                         if (!indexName) {
-                            console.log("error, no index name or cannister principal given");
+                            console.log("error, no index or collection name  given");
                             return [2 /*return*/, false];
                         }
                         return [4 /*yield*/, this._actor.getMetadataList(indexName)];
@@ -324,7 +325,6 @@ var LocalIndex = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         if (!this._data && !this._indexName) {
-                            console.error("data is not there");
                             return [2 /*return*/];
                         }
                         return [4 /*yield*/, this.isIndexCreated(this._indexName)];
@@ -337,40 +337,36 @@ var LocalIndex = /** @class */ (function () {
                         _a.trys.push([2, 4, , 5]);
                         storeId = this._indexName;
                         if (!storeId) {
-                            console.log("no cannister or store id not found");
+                            console.log("no valid collection found");
                             return [2 /*return*/];
                         }
                         return [4 /*yield*/, this._actor.getIndex(storeId)];
                     case 3:
                         vectors = _a.sent();
-                        console.log("this is the store id: ", storeId);
-                        console.log("let me see the vectors: ", vectors);
                         if (!vectors[0]) {
-                            console.log("no vectors found", vectors);
+                            console.log("no vectors found in index", vectors);
                             return [2 /*return*/];
                         }
                         if (vectors[0]) {
                             result = vectors[0].items;
                             if (result.length > 0) {
                                 this._data = {
-                                    cannisterId: storeId,
-                                    items: [
-                                        {
-                                            id: result[0].vectorId,
-                                            metadata: {
-                                                documentId: result[0].recipe_id,
-                                                startPos: Number(result[0].startPos),
-                                                endPos: Number(result[0].startPos),
-                                            },
-                                            vector: result[0].vector,
-                                            norm: 0, //add this to vector-data on chain
+                                    collectionId: storeId,
+                                    items: result.map(function (item) { return ({
+                                        id: item.id,
+                                        metadata: {
+                                            documentId: item.documentId,
+                                            startPos: Number(item.startPos),
+                                            endPos: Number(item.endPos),
                                         },
-                                    ],
+                                        vector: item.vector,
+                                        norm: item.norm,
+                                    }); }),
                                 };
                             }
                             else {
                                 this._data = {
-                                    cannisterId: storeId,
+                                    collectionId: storeId,
                                     items: [],
                                 };
                             }
@@ -378,7 +374,6 @@ var LocalIndex = /** @class */ (function () {
                         return [3 /*break*/, 5];
                     case 4:
                         error_1 = _a.sent();
-                        console.error("Error loading index data:", error_1);
                         throw new Error("Failed to load index data");
                     case 5: return [2 /*return*/];
                 }
@@ -425,13 +420,13 @@ var LocalIndex = /** @class */ (function () {
                     }
                     else {
                         (_d = this._update) === null || _d === void 0 ? void 0 : _d.items.push(newItem);
-                        console.log("this item was added", newItem);
+                        console.log("item was added", newItem);
                         return [2 /*return*/, newItem];
                     }
                 }
                 else {
                     (_e = this._update) === null || _e === void 0 ? void 0 : _e.items.push(newItem);
-                    console.log("this item was added", newItem);
+                    console.log("item was added", newItem);
                     return [2 /*return*/, newItem];
                 }
                 return [2 /*return*/];

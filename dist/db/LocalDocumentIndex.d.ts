@@ -14,6 +14,8 @@ export interface LocalDocumentIndexConfig {
     indexName: string;
     apiKey: string;
     isCatalog?: boolean;
+    _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
+    _getDocumentTitle?: (documentId: string) => Promise<string | undefined>;
     chunkingConfig?: Partial<TextSplitterConfig>;
 }
 export declare class LocalDocumentIndex extends LocalIndex {
@@ -23,6 +25,8 @@ export declare class LocalDocumentIndex extends LocalIndex {
     private readonly isCatalog?;
     private readonly _chunkingConfig?;
     private _catalog?;
+    private readonly _getDocumentId?;
+    private readonly _getDocumentTitle?;
     private _newCatalog?;
     constructor(config: LocalDocumentIndexConfig);
     get embeddings(): EmbeddingsModel | undefined;

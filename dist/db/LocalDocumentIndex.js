@@ -68,6 +68,8 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
         _this._tokenizer = new GPT3Tokenizer();
         _this._chunkingConfig.tokenizer = _this._tokenizer;
         _this.isCatalog = config.isCatalog;
+        _this._getDocumentId = config._getDocumentId;
+        _this._getDocumentTitle = config._getDocumentTitle;
         return _this;
     }
     Object.defineProperty(LocalDocumentIndex.prototype, "embeddings", {
@@ -94,42 +96,52 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
     };
     LocalDocumentIndex.prototype.getDocumentId = function (title) {
         return __awaiter(this, void 0, void 0, function () {
-            var x;
-            var _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var x, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0: return [4 /*yield*/, this.loadIndexData()];
                     case 1:
-                        _c.sent();
-                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.titleToDocumentID(this.indexName, title))];
+                        _b.sent();
+                        if (!this._getDocumentId) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this._getDocumentId(title)];
                     case 2:
-                        x = _c.sent();
-                        return [2 /*return*/, (_b = x[0]) !== null && _b !== void 0 ? _b : undefined];
+                        _a = _b.sent();
+                        return [3 /*break*/, 4];
+                    case 3:
+                        _a = undefined;
+                        _b.label = 4;
+                    case 4:
+                        x = _a;
+                        console.log("retrieved doc id", x);
+                        return [2 /*return*/, x];
                 }
             });
         });
     };
     LocalDocumentIndex.prototype.getDocumentTitle = function (documentId) {
         return __awaiter(this, void 0, void 0, function () {
-            var x, e_1;
-            var _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var x, _a, e_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
-                        _c.trys.push([0, 3, , 4]);
-                        return [4 /*yield*/, this.loadIndexData()];
+                        _b.trys.push([0, 4, , 5]);
+                        if (!this._getDocumentTitle) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this._getDocumentTitle(documentId)];
                     case 1:
-                        _c.sent();
-                        return [4 /*yield*/, ((_a = this.actor) === null || _a === void 0 ? void 0 : _a.documentIDToTitle(this.indexName, documentId))];
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
                     case 2:
-                        x = _c.sent();
-                        console.log("found uri", x);
-                        return [2 /*return*/, (_b = x[0]) !== null && _b !== void 0 ? _b : undefined];
+                        _a = undefined;
+                        _b.label = 3;
                     case 3:
-                        e_1 = _c.sent();
+                        x = _a;
+                        console.log("retrieved doc uri or title", x);
+                        return [2 /*return*/, x];
+                    case 4:
+                        e_1 = _b.sent();
                         console.log(e_1);
-                        return [3 /*break*/, 4];
-                    case 4: return [2 /*return*/];
+                        return [3 /*break*/, 5];
+                    case 5: return [2 /*return*/];
                 }
             });
         });
@@ -155,7 +167,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
     };
     LocalDocumentIndex.prototype.upsertDocument = function (docId, title, text, metadata) {
         return __awaiter(this, void 0, void 0, function () {
-            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_1, chunk, embeddings, _a, chunkBatches_1, rawBatch, result, batch, response, embedding, err_1, _b, result_1, embedding, i, chunk, embedding, chunkMetadata, err_2;
+            var documentId, splitter, chunks, totalTokens, chunkBatches, currentBatch, _i, chunks_1, chunk, embeddings, _a, chunkBatches_1, rawBatch, result, batch, response, sortedEmbedding, _b, sortedEmbedding_1, embedding, err_1, i, chunk, embedding, chunkMetadata, err_2;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -185,7 +197,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _a = 0, chunkBatches_1 = chunkBatches;
                         _c.label = 1;
                     case 1:
-                        if (!(_a < chunkBatches_1.length)) return [3 /*break*/, 7];
+                        if (!(_a < chunkBatches_1.length)) return [3 /*break*/, 6];
                         rawBatch = chunkBatches_1[_a];
                         result = void 0;
                         batch = this.formatBatch(rawBatch);
@@ -197,40 +209,35 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                     case 3:
                         response = _c.sent();
                         if ("success" in response) {
-                            embedding = JSON.parse(response.success)
+                            sortedEmbedding = JSON.parse(response.success)
                                 .data.sort(function (a, b) { return a.index - b.index; })
                                 .map(function (item) { return item.embedding; });
-                            return [2 /*return*/, embedding];
+                            for (_b = 0, sortedEmbedding_1 = sortedEmbedding; _b < sortedEmbedding_1.length; _b++) {
+                                embedding = sortedEmbedding_1[_b];
+                                embeddings.push(embedding);
+                            }
                         }
                         return [3 /*break*/, 5];
                     case 4:
                         err_1 = _c.sent();
                         throw new Error("Error generating embeddings: ".concat(err_1.toString()));
                     case 5:
-                        if (result) {
-                            for (_b = 0, result_1 = result; _b < result_1.length; _b++) {
-                                embedding = result_1[_b];
-                                embeddings.push(embedding);
-                            }
-                        }
-                        _c.label = 6;
-                    case 6:
                         _a++;
                         return [3 /*break*/, 1];
-                    case 7:
+                    case 6:
                         console.log("this is the embeddings before insertion", embeddings);
                         // Add document chunks to index
                         return [4 /*yield*/, this.beginUpdate()];
-                    case 8:
+                    case 7:
                         // Add document chunks to index
                         _c.sent();
+                        _c.label = 8;
+                    case 8:
+                        _c.trys.push([8, 14, , 15]);
+                        i = 0;
                         _c.label = 9;
                     case 9:
-                        _c.trys.push([9, 15, , 16]);
-                        i = 0;
-                        _c.label = 10;
-                    case 10:
-                        if (!(i < chunks.length)) return [3 /*break*/, 13];
+                        if (!(i < chunks.length)) return [3 /*break*/, 12];
                         chunk = chunks[i];
                         embedding = embeddings[i];
                         chunkMetadata = Object.assign({
@@ -243,25 +250,25 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                                 metadata: chunkMetadata,
                                 vector: embedding,
                             })];
-                    case 11:
+                    case 10:
                         _c.sent();
-                        _c.label = 12;
-                    case 12:
+                        _c.label = 11;
+                    case 11:
                         i++;
-                        return [3 /*break*/, 10];
-                    case 13: 
+                        return [3 /*break*/, 9];
+                    case 12: 
                     // Commit changes
                     return [4 /*yield*/, this.endUpdate()];
-                    case 14:
+                    case 13:
                         // Commit changes
                         _c.sent();
-                        return [3 /*break*/, 16];
-                    case 15:
+                        return [3 /*break*/, 15];
+                    case 14:
                         err_2 = _c.sent();
                         // Cancel update and raise error
                         this.cancelUpdate();
                         throw new Error("Error adding document \"".concat(title, "\": ").concat(err_2.toString()));
-                    case 16: 
+                    case 15: 
                     // Return document
                     return [2 /*return*/, new LocalDocument(this, documentId, title)];
                 }
@@ -299,9 +306,11 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         _c = _b[_i];
                         if (!(_c in _a)) return [3 /*break*/, 4];
                         documentId = _c;
+                        console.log("this doc id is being checked", documentId);
                         return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
                         title = _d.sent();
+                        console.log("maybe title", title);
                         documentResult = new LocalDocumentResult(this, documentId, title, docs[documentId], this._tokenizer);
                         results.push(documentResult);
                         _d.label = 4;
@@ -328,12 +337,10 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         if (!queryEmbedding) {
                             throw new Error("no embeddings  found for query");
                         }
-                        console.log("max chunks", options.maxChunks);
-                        console.log("filter options", options.filter);
                         return [4 /*yield*/, this.queryItems(queryEmbedding, options.maxChunks, options.filter)];
                     case 1:
                         results = _e.sent();
-                        console.log("returned query embedding2", results);
+                        console.log("returned query embedding3", results);
                         documentChunks = {};
                         for (_i = 0, results_1 = results; _i < results_1.length; _i++) {
                             result = results_1[_i];
@@ -344,6 +351,7 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                             documentChunks[metadata.documentId].push(result);
                         }
                         documentResults = [];
+                        console.log("document result", documentChunks);
                         _a = documentChunks;
                         _b = [];
                         for (_c in _a)
@@ -361,8 +369,10 @@ var LocalDocumentIndex = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.getDocumentTitle(documentId)];
                     case 3:
                         title = _e.sent();
-                        documentResult = new LocalDocumentResult(this, documentId, title, chunks, this._tokenizer);
-                        documentResults.push(documentResult);
+                        if (title) {
+                            documentResult = new LocalDocumentResult(this, documentId, title, chunks, this._tokenizer);
+                            documentResults.push(documentResult);
+                        }
                         _e.label = 4;
                     case 4:
                         _d++;

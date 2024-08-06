@@ -83,13 +83,16 @@ export class LocalIndex {
     try {
       // Loop through all items in the update
       for (const item of this._update.items) {
+        console.log("testing norm", item.vector);
+
         // Insert each vector to the canister
         const vectorId = await this._actor.putVector(
+          this.indexName,
           item.metadata.documentId.toString(),
           item.id,
           BigInt(item.metadata.startPos),
           BigInt(item.metadata.endPos),
-          item.metadata.norm,
+          item.norm,
           item.vector
         );
         // Step 3: Handle successful publication
@@ -161,7 +164,7 @@ export class LocalIndex {
   ): Promise<boolean> {
     try {
       if (!indexName) {
-        console.log("error, no index name or cannister principal given");
+        console.log("error, no index or collection name  given");
         return false;
       }
       const data = await this._actor.getMetadataList(indexName);
@@ -210,11 +213,10 @@ export class LocalIndex {
 
     // Filter items
     let items = this._data!.items;
+
     if (filter) {
       items = items.filter((i) => ItemSelector.select(i.metadata, filter));
     }
-
-    // "ic-use-blueband-db": "^0.0.89",
 
     // Calculate distances
     const norm = ItemSelector.normalize(vector);
@@ -249,7 +251,6 @@ export class LocalIndex {
    */
   protected async loadIndexData(): Promise<void> {
     if (!this._data && !this._indexName) {
-      console.error("data is not there");
       return;
     }
 
@@ -261,45 +262,41 @@ export class LocalIndex {
       const storeId: any = this._indexName;
 
       if (!storeId) {
-        console.log("no cannister or store id not found");
+        console.log("no valid collection found");
         return;
       }
       const vectors = await this._actor.getIndex(storeId);
 
-      console.log("this is the store id: ", storeId);
-      console.log("let me see the vectors: ", vectors);
-
       if (!vectors[0]) {
-        console.log("no vectors found", vectors);
+        console.log("no vectors found in index", vectors);
         return;
       }
+
       if (vectors[0]) {
         const result = vectors[0].items;
+
         if (result.length > 0) {
           this._data = {
-            cannisterId: storeId,
-            items: [
-              {
-                id: result[0].vectorId,
-                metadata: {
-                  documentId: result[0].recipe_id,
-                  startPos: Number(result[0].startPos),
-                  endPos: Number(result[0].startPos),
-                },
-                vector: result[0].vector,
-                norm: 0, //add this to vector-data on chain
+            collectionId: storeId,
+            items: result.map((item: any) => ({
+              id: item.id,
+              metadata: {
+                documentId: item.documentId,
+                startPos: Number(item.startPos),
+                endPos: Number(item.endPos),
               },
-            ],
+              vector: item.vector,
+              norm: item.norm,
+            })),
           };
         } else {
           this._data = {
-            cannisterId: storeId,
+            collectionId: storeId,
             items: [],
           };
         }
       }
     } catch (error) {
-      console.error("Error loading index data:", error);
       throw new Error("Failed to load index data");
     }
   }
@@ -353,19 +350,19 @@ export class LocalIndex {
         return existing;
       } else {
         this._update?.items.push(newItem);
-        console.log("this item was added", newItem);
+        console.log("item was added", newItem);
         return newItem;
       }
     } else {
       this._update?.items.push(newItem);
-      console.log("this item was added", newItem);
+      console.log("item was added", newItem);
       return newItem;
     }
   }
 }
 
 interface IndexData {
-  cannisterId: string;
+  collectionId: string;
   metadata_config?: {
     indexed?: string[];
   };

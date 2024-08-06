@@ -25,6 +25,8 @@ export interface LocalDocumentIndexConfig {
   indexName: string;
   apiKey: string;
   isCatalog?: boolean;
+  _getDocumentId?: (documentUri: string) => Promise<string | undefined>;
+  _getDocumentTitle?: (documentId: string) => Promise<string | undefined>;
   chunkingConfig?: Partial<TextSplitterConfig>;
 }
 
@@ -36,6 +38,12 @@ export class LocalDocumentIndex extends LocalIndex {
   private readonly isCatalog?: boolean;
   private readonly _chunkingConfig?: TextSplitterConfig;
   private _catalog?: DocumentCatalog;
+  private readonly _getDocumentId?: (
+    documentUri: string
+  ) => Promise<string | undefined>;
+  private readonly _getDocumentTitle?: (
+    documentId: string
+  ) => Promise<string | undefined>;
   private _newCatalog?: DocumentCatalog;
 
   public constructor(config: LocalDocumentIndexConfig) {
@@ -52,6 +60,8 @@ export class LocalDocumentIndex extends LocalIndex {
     this._tokenizer = new GPT3Tokenizer();
     this._chunkingConfig.tokenizer = this._tokenizer;
     this.isCatalog = config.isCatalog;
+    this._getDocumentId = config._getDocumentId;
+    this._getDocumentTitle = config._getDocumentTitle;
   }
 
   public get embeddings(): EmbeddingsModel | undefined {
@@ -68,18 +78,20 @@ export class LocalDocumentIndex extends LocalIndex {
 
   public async getDocumentId(title: string): Promise<string | undefined> {
     await this.loadIndexData();
-    const x = await this.actor?.titleToDocumentID(this.indexName, title);
-    return x[0] ?? undefined;
+    const x = this._getDocumentId
+      ? await this._getDocumentId(title)
+      : undefined;
+    return x;
   }
 
   public async getDocumentTitle(
     documentId: string
   ): Promise<string | undefined> {
     try {
-      await this.loadIndexData();
-      const x = await this.actor?.documentIDToTitle(this.indexName, documentId);
-      console.log("found uri", x);
-      return x[0] ?? undefined;
+      const x = this._getDocumentTitle
+        ? await this._getDocumentTitle(documentId)
+        : undefined;
+      return x;
     } catch (e) {
       console.log(e);
     }
@@ -144,21 +156,18 @@ export class LocalDocumentIndex extends LocalIndex {
         );
 
         if ("success" in response) {
-          const embedding = JSON.parse(response.success)
+          const sortedEmbedding = JSON.parse(response.success)
             .data.sort((a: any, b: any) => a.index - b.index)
             .map((item: any) => item.embedding);
-          return embedding;
+
+          for (const embedding of sortedEmbedding) {
+            embeddings.push(embedding);
+          }
         }
       } catch (err: unknown) {
         throw new Error(
           `Error generating embeddings: ${(err as any).toString()}`
         );
-      }
-
-      if (result) {
-        for (const embedding of result) {
-          embeddings.push(embedding);
-        }
       }
     }
 
@@ -221,8 +230,6 @@ export class LocalDocumentIndex extends LocalIndex {
     for (const documentId in docs) {
       const title = await this.getDocumentTitle(documentId);
 
-      //uri is like the title here right?
-
       const documentResult = new LocalDocumentResult(
         this,
         documentId,
@@ -253,9 +260,6 @@ export class LocalDocumentIndex extends LocalIndex {
     if (!queryEmbedding) {
       throw new Error(`no embeddings  found for query`);
     }
-    
-    console.log("max chunks", options.maxChunks);
-    console.log("filter options", options.filter);
 
     // Query index for chunks
     const results = await this.queryItems<DocumentChunkMetadata>(
@@ -263,8 +267,6 @@ export class LocalDocumentIndex extends LocalIndex {
       options.maxChunks!,
       options.filter as any
     );
-
-    console.log("returned query embedding2", results);
 
     // Group chunks by document
     const documentChunks: {
@@ -281,21 +283,20 @@ export class LocalDocumentIndex extends LocalIndex {
     // Create a document result for each document
     const documentResults: LocalDocumentResult[] = [];
 
-    // console.log("document result", documentChunks);
-
     for (const documentId in documentChunks) {
       const chunks = documentChunks[documentId];
-      console.log("new chunks id", documentId);
       if (documentId) {
         const title = await this.getDocumentTitle(documentId);
-        const documentResult = new LocalDocumentResult(
-          this,
-          documentId,
-          title!,
-          chunks,
-          this._tokenizer
-        );
-        documentResults.push(documentResult);
+        if (title) {
+          const documentResult = new LocalDocumentResult(
+            this,
+            documentId,
+            title!,
+            chunks,
+            this._tokenizer
+          );
+          documentResults.push(documentResult);
+        }
       }
     }
 

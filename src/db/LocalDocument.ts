@@ -74,9 +74,8 @@ export class LocalDocument {
   public async loadText(): Promise<string> {
     if (this._text == undefined) {
       try {
-        const documentID = await this._index.getDocumentId(this._title); //this should return the documents ID
+        const documentID = await this._index.getDocumentId(this._title);
 
-        //then we use this ID to fetch all the chunks (texts) saved of that document
         if (!documentID) {
           console.log("no document ID returned");
           throw new Error();
@@ -85,7 +84,7 @@ export class LocalDocument {
         const store = this._index.indexName;
 
         if (!store) {
-          console.log("error no index or store nameZ", store);
+          console.log("error no index or store id", store);
           throw new Error();
         }
 
